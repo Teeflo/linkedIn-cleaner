@@ -68,25 +68,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             func: contentScript,
             args: [delay]
           });
-          sendResponse({ status: state.status });
         };
 
         if (!isConnectionsPage(tab.url)) {
           chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            func: () => alert('Redirection vers la page de connexions...')
-          });
-          chrome.tabs.update(tab.id, { url: 'https://www.linkedin.com/mynetwork/invite-connect/connections/' });
-          const listener = (id, info, updatedTab) => {
-            if (id === tab.id && info.status === 'complete' && isConnectionsPage(updatedTab.url)) {
-              chrome.tabs.onUpdated.removeListener(listener);
-              startCleaner();
+            func: () => confirm("Vous allez être redirigé vers une nouvelle page. Après la redirection, veuillez cliquer à nouveau sur le bouton 'Commencer' pour poursuivre le processus de suppression.")
+          }, results => {
+            const proceed = results && results[0] && results[0].result;
+            if (!proceed) {
+              sendResponse({ status: 'idle' });
+              return;
             }
-          };
-          chrome.tabs.onUpdated.addListener(listener);
-          sendResponse({ status: 'redirecting' });
+
+            state.status = 'redirecting';
+            chrome.tabs.update(tab.id, { url: 'https://www.linkedin.com/mynetwork/invite-connect/connections/' });
+            const listener = (id, info, updatedTab) => {
+              if (id === tab.id && info.status === 'complete' && isConnectionsPage(updatedTab.url)) {
+                chrome.tabs.onUpdated.removeListener(listener);
+                startCleaner();
+              }
+            };
+            chrome.tabs.onUpdated.addListener(listener);
+            sendResponse({ status: state.status });
+          });
         } else {
           startCleaner();
+          sendResponse({ status: state.status });
         }
       });
       return true;
