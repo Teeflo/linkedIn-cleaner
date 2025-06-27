@@ -21,4 +21,4 @@ LinkedIn Cleaner est une extension Chrome minimaliste qui aide à gérer et nett
 - Toute personne soucieuse de la qualité plutôt que de la quantité.
 
 ## Fonctionnement
-L'extension vérifie que vous êtes bien sur la page des connexions avant de lancer le script. Elle ouvre le menu d'actions de chaque contact, clique sur **Retirer la relation**, confirme la suppression et attend 1,5 à 2 secondes entre chaque contact pour reproduire un rythme humain.
+L'extension vérifie que vous êtes bien sur la page des connexions avant de lancer le script. Elle ouvre le menu d'actions de chaque contact, clique sur **Retirer la relation**, confirme la suppression et attend 1,5 à 2 secondes entre chaque contact pour reproduire un rythme humain. La logique d'injection est désormais gérée par un *service worker* pour plus de fiabilité.
