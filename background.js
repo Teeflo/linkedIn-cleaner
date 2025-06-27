@@ -42,27 +42,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'start':
       chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
         const tab = tabs[0];
-        if (!tab || !isConnectionsPage(tab.url)) {
+        if (!tab) { sendResponse(); return; }
+        const delay = message.delay || 1500;
+
+        const startCleaner = () => {
+          state.status = 'running';
+          state.removed = 0;
+          state.total = 0;
+          state.tabId = tab.id;
+          state.delay = delay;
+
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => { window.__liCleanerStop = false; }
+          });
+
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: contentScript,
+            args: [delay]
+          });
+          sendResponse({ status: state.status });
+        };
+
+        if (!isConnectionsPage(tab.url)) {
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => alert('Redirection vers la page de connexions...')
+          });
+          chrome.tabs.update(tab.id, { url: 'https://www.linkedin.com/mynetwork/invite-connect/connections/' });
+          const listener = (id, info, updatedTab) => {
+            if (id === tab.id && info.status === 'complete' && isConnectionsPage(updatedTab.url)) {
+              chrome.tabs.onUpdated.removeListener(listener);
+              startCleaner();
+            }
+          };
+          chrome.tabs.onUpdated.addListener(listener);
           sendResponse({ status: 'redirecting' });
-          return;
+        } else {
+          startCleaner();
         }
-        state.status = 'running';
-        state.removed = 0;
-        state.total = 0;
-        state.tabId = tab.id;
-        state.delay = message.delay || 1500;
-
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: () => { window.__liCleanerStop = false; }
-        });
-
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: contentScript,
-          args: [state.delay]
-        });
-        sendResponse({ status: state.status });
       });
       return true;
     case 'status':
