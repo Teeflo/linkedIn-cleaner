@@ -30,7 +30,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             }
             var card = cards[i];
             var moreBtn = card.querySelector(
-              "button[aria-label*='More actions'], button[aria-label*='Plus d\\u2019actions'], button[aria-label*=\"Plus d'action\"]"
+              "button.mn-connection-card__dropdown-trigger, " +
+              "button[aria-label*='More actions'], " +
+              "button[aria-label*='Plus d\\u2019actions'], " +
+              "button[aria-label*=\"Plus d'action\"]"
             );
             function continueNext() {
               wait(randomDelay()).then(function() { processCard(i + 1); });
@@ -40,7 +43,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
               moreBtn.click();
               wait(500).then(function() {
                 var removeBtn = document.querySelector(
-                  "div[role='menu'] button[aria-label*='Remove connection'], div[role='menu'] button[aria-label*='Retirer la relation'], div[role='menu'] button[aria-label*='Supprimer la relation']"
+                  "div.mn-connection-card__dropdown-item button[aria-label*='Remove connection'], " +
+                  "div.mn-connection-card__dropdown-item button[aria-label*='Retirer la relation'], " +
+                  "div.mn-connection-card__dropdown-item button[aria-label*='Supprimer la relation'], " +
+                  "div.mn-connection-card__dropdown-item button[aria-label*='Supprimer']"
                 );
                 if (removeBtn) {
                   console.log('Removing connection');
