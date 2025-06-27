@@ -3,7 +3,7 @@
   "name": "LinkedIn Cleaner",
   "description": "Reprenez le contrôle de votre réseau professionnel, en un seul clic.",
   "version": "1.0",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "tabs"],
   "host_permissions": ["https://www.linkedin.com/*"],
   "background": {
     "service_worker": "background.js"
