@@ -6,10 +6,11 @@ function removeConnections() {
     return;
   }
   const cards = Array.from(document.querySelectorAll('li.mn-connection-card'));
-  (async () => {
-    for (const card of cards) {
-      const moreBtn = card.querySelector(
-        "button[aria-label*='More actions'], button[aria-label*='Plus d\\u2019actions'], button[aria-label*='Plus d\\'actions']"
+  (async function() {
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
+      var moreBtn = card.querySelector(
+        "button[aria-label*='More actions'], button[aria-label*='Plus d\\u2019actions'], button[aria-label*=\"Plus d'action\"]"
       );
       if (moreBtn) {
         console.log('Opening actions menu for', card);
@@ -39,7 +40,7 @@ function removeConnections() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'clean') {
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      if (!tab?.url.includes('linkedin.com/mynetwork/invite-connect/connections/')) {
+      if (!tab || !tab.url || !tab.url.includes('linkedin.com/mynetwork/invite-connect/connections/')) {
         chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: () => alert('Veuillez naviguer vers votre page de connexions LinkedIn.')
