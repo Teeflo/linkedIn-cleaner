@@ -1,10 +1,4 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/background.js b/background.js
-index 5b309ba911ba8c7b6b40ab909817fd3f69113efe..a1cafb7cc37d0611a116fce9b66501c083e3822e 100644
---- a/background.js
-+++ b/background.js
-@@ -1,45 +1,52 @@
- function removeConnections() {
+function removeConnections() {
    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
    function randomDelay() { return 1500 + Math.random() * 500; }
    if (!location.href.includes('linkedin.com/mynetwork/invite-connect/connections/')) {
