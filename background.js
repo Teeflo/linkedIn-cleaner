@@ -40,11 +40,15 @@ function startCleaning(tabId, delay) {
           if (paused) { setTimeout(process, 500); return; }
           if (index >= cards.length) { window.liCleanerState.status = 'completed'; return; }
           const card = cards[index];
-          const moreBtn = card.querySelector("button[aria-label*='More actions'], button[aria-label*='Plus d\u2019actions'], button[aria-label*=\"Plus d'action\"]");
+          const moreBtn = card.querySelector("button.mn-connection-card__dropdown-trigger, button[aria-label*='More actions'], button[aria-label*='Plus d\u2019actions'], button[aria-label*=\"Plus d'action\"]");
           if (moreBtn) {
             moreBtn.click();
             await wait(500);
-            const removeBtn = document.querySelector("div[role='menu'] button[aria-label*='Remove connection'], div[role='menu'] button[aria-label*='Retirer la relation'], div[role='menu'] button[aria-label*='Supprimer la relation']");
+            const removeBtn = Array.from(document.querySelectorAll("button"))
+              .find(b => {
+                const l = b.getAttribute('aria-label') || '';
+                return /Supprimer.*relation|Retirer.*relation|Remove.*connection/i.test(l);
+              });
             if (removeBtn) {
               removeBtn.click();
               await wait(500);
