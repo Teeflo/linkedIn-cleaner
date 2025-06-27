@@ -35,6 +35,18 @@ function startCleaning(tabId, delay) {
             window.liCleanerState.status = 'stopped';
           }
         };
+
+        // stop the process if the user navigates away from the connections page
+        const pageCheck = setInterval(() => {
+          if (location.href.indexOf('linkedin.com/mynetwork/invite-connect/connections/') === -1) {
+            window.liCleaner.stop();
+            clearInterval(pageCheck);
+          }
+        }, 500);
+        window.addEventListener('beforeunload', () => {
+          window.liCleaner.stop();
+          clearInterval(pageCheck);
+        });
         const process = async () => {
           if (stopped) return;
           if (paused) { setTimeout(process, 500); return; }
