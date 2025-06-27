@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Cleaner",
+  "description": "Reprenez le contrôle de votre réseau professionnel, en un seul clic.",
+  "version": "1.0",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://www.linkedin.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LinkedIn Cleaner"
+  
+  }
+}
