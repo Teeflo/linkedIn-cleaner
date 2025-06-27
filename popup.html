@@ -7,7 +7,9 @@
     body { font-family: Arial, sans-serif; width: 300px; padding: 15px; background:#ffffff; color:#333; position:relative; }
     h1 { font-size:18px; color:#0073b1; text-align:center; margin-top:0; }
     label { font-size:14px; display:block; margin-bottom:4px; }
-    select { width:100%; padding:5px; margin-bottom:10px; }
+    select, input[type=range] { width:100%; padding:5px; margin-bottom:10px; }
+    .range-wrap { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    #delayValue { min-width:40px; text-align:right; }
     .controls { display:flex; justify-content:space-between; margin-bottom:10px; }
     button { flex:1; margin:0 2px; padding:8px; border:none; border-radius:4px; color:#fff; font-size:14px; cursor:pointer; }
     #start { background:#28a745; }
@@ -23,13 +25,10 @@
   <button id="close">&times;</button>
   <h1>Suppression automatique des connexions LinkedIn</h1>
   <label for="delay">Délai entre suppressions</label>
-  <select id="delay">
-    <option value="1000">1s</option>
-    <option value="2000">2s</option>
-    <option value="3000">3s</option>
-    <option value="5000">5s</option>
-    <option value="10000">10s</option>
-  </select>
+  <div class="range-wrap">
+    <input type="range" id="delay" min="1" max="60" value="2">
+    <span id="delayValue">2 sec</span>
+  </div>
   <div class="controls">
     <button id="start">Commencer</button>
     <button id="pause">Pause</button>

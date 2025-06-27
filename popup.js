@@ -1,13 +1,23 @@
 const startBtn = document.getElementById('start');
 const pauseBtn = document.getElementById('pause');
 const stopBtn = document.getElementById('stop');
-const delaySelect = document.getElementById('delay');
+const delayInput = document.getElementById('delay');
+const delayValue = document.getElementById('delayValue');
 const counter = document.getElementById('counter');
 const stateSpan = document.getElementById('state');
 const progress = document.getElementById('progress');
 
+function updateDelayDisplay() {
+  delayValue.textContent = `${delayInput.value} sec`;
+}
+
+updateDelayDisplay();
+
+delayInput.addEventListener('input', updateDelayDisplay);
+
 startBtn.addEventListener('click', () => {
-  chrome.runtime.sendMessage({ action: 'start', delay: parseInt(delaySelect.value, 10) }, updateState);
+  const delayMs = parseInt(delayInput.value, 10) * 1000;
+  chrome.runtime.sendMessage({ action: 'start', delay: delayMs }, updateState);
 });
 
 pauseBtn.addEventListener('click', () => {

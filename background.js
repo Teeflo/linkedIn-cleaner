@@ -16,7 +16,10 @@ function stopProcess() {
   if (state.tabId !== null) {
     chrome.scripting.executeScript({
       target: { tabId: state.tabId },
-      func: () => { window.__liCleanerStop = true; }
+      func: () => {
+        window.__liCleanerStop = true;
+        window.__liCleanerPause = false;
+      }
     });
   }
   state.status = 'stopped';
@@ -54,7 +57,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            func: () => { window.__liCleanerStop = false; }
+            func: () => {
+              window.__liCleanerStop = false;
+              window.__liCleanerPause = false;
+            }
           });
 
           chrome.scripting.executeScript({
@@ -87,6 +93,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'status':
       sendResponse(state);
       break;
+    case 'pause':
+      if (state.tabId !== null) {
+        const shouldPause = state.status === 'running';
+        state.status = shouldPause ? 'paused' : 'running';
+        chrome.scripting.executeScript({
+          target: { tabId: state.tabId },
+          func: p => { window.__liCleanerPause = p; },
+          args: [shouldPause]
+        });
+      }
+      break;
     case 'stop':
       stopProcess();
       break;
@@ -109,6 +126,8 @@ function contentScript(delay) {
     return;
   }
 
+  window.__liCleanerPause = false;
+
   const cards = Array.from(document.querySelectorAll('li.mn-connection-card'));
   chrome.runtime.sendMessage({ action: 'total', total: cards.length });
 
@@ -119,6 +138,10 @@ function contentScript(delay) {
   async function process() {
     if (window.__liCleanerStop) {
       chrome.runtime.sendMessage({ action: 'completed' });
+      return;
+    }
+    if (window.__liCleanerPause) {
+      setTimeout(process, 200);
       return;
     }
     if (i >= cards.length) {
@@ -136,6 +159,9 @@ function contentScript(delay) {
 
     async function next() {
       i += 1;
+      while (window.__liCleanerPause && !window.__liCleanerStop) {
+        await wait(200);
+      }
       await wait(randomDelay());
       process();
     }
