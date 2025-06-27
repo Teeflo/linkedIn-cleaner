@@ -2,7 +2,7 @@ function startCleaning(tabId, delay) {
   chrome.scripting.executeScript({
     target: { tabId },
     func: (d) => {
-      (function(delay) {
+      (async function run(delay) {
         if (location.href.indexOf('linkedin.com/mynetwork/invite-connect/connections/') === -1) {
           alert('Redirection vers la page de connexions...');
           location.href = 'https://www.linkedin.com/mynetwork/invite-connect/connections/';
@@ -11,7 +11,16 @@ function startCleaning(tabId, delay) {
         if (window.liCleaner && window.liCleaner.stop) {
           window.liCleaner.stop();
         }
-        const cards = Array.from(document.querySelectorAll('li.mn-connection-card'));
+        const wait = ms => new Promise(r => setTimeout(r, ms));
+        async function waitForCards() {
+          for (let i = 0; i < 20; i++) {
+            const found = document.querySelectorAll('li.mn-connection-card');
+            if (found.length) return Array.from(found);
+            await wait(500);
+          }
+          return [];
+        }
+        const cards = await waitForCards();
         let index = 0;
         let paused = false;
         let stopped = false;
@@ -26,7 +35,6 @@ function startCleaning(tabId, delay) {
             window.liCleanerState.status = 'stopped';
           }
         };
-        const wait = ms => new Promise(r => setTimeout(r, ms));
         const process = async () => {
           if (stopped) return;
           if (paused) { setTimeout(process, 500); return; }

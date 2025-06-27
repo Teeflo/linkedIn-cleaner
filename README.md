@@ -11,8 +11,8 @@ LinkedIn Cleaner est une extension Chrome minimaliste qui aide à gérer et nett
 
 ## Utilisation
 1. Naviguez vers votre page de connexions LinkedIn : `https://www.linkedin.com/mynetwork/invite-connect/connections/`.
-2. Cliquez sur l'icône de l'extension et appuyez sur **Nettoyer cette page**.
-3. Les contacts visibles seront retirés un par un avec confirmation automatique. Rechargez la page pour traiter un nouveau lot si nécessaire.
+2. Cliquez sur l'icône de l'extension puis sur **Commencer** pour lancer la suppression automatique.
+3. Utilisez **Pause** ou **Arrêter** pour contrôler le processus. Les contacts visibles seront retirés un par un. Rechargez la page pour traiter un nouveau lot si nécessaire.
 
 ## À qui s'adresse cette extension ?
 - Les professionnels en transition de carrière qui souhaitent réorienter leur réseau.
