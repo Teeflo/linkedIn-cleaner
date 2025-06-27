@@ -30,7 +30,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             }
             var card = cards[i];
             var moreBtn = card.querySelector(
-              "button[aria-label*='More actions'], button[aria-label*='Plus d\\u2019actions'], button[aria-label*=\"Plus d'action\"]"
+              "button[aria-label*='More actions'], button[aria-label*='Plus d\\u2019actions'], button[aria-label*=\"Plus d'action\"], button.mn-connection-card__dropdown-trigger, button.artdeco-dropdown__trigger"
             );
             function continueNext() {
               wait(randomDelay()).then(function() { processCard(i + 1); });
@@ -42,6 +42,16 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
                 var removeBtn = document.querySelector(
                   "div[role='menu'] button[aria-label*='Remove connection'], div[role='menu'] button[aria-label*='Retirer la relation'], div[role='menu'] button[aria-label*='Supprimer la relation']"
                 );
+                if (!removeBtn) {
+                  Array.from(document.querySelectorAll("div[role='menu'] *"))
+                    .some(function(el) {
+                      if (/Remove connection|Retirer la relation|Supprimer la relation/i.test(el.textContent)) {
+                        removeBtn = el.closest('button') || el;
+                        return true;
+                      }
+                      return false;
+                    });
+                }
                 if (removeBtn) {
                   console.log('Removing connection');
                   removeBtn.click();
@@ -49,6 +59,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
                     var confirmBtn = document.querySelector(
                       "button.artdeco-button--danger, button[aria-label*='Remove'], button[aria-label*='Retirer'], button[aria-label*='Supprimer']"
                     );
+                    if (!confirmBtn) {
+                      confirmBtn = Array.from(document.querySelectorAll('button')).find(function(btn) {
+                        return /Remove|Retirer|Supprimer/i.test(btn.textContent);
+                      });
+                    }
                     if (confirmBtn) {
                       console.log('Confirming removal');
                       confirmBtn.click();
