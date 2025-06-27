@@ -32,12 +32,12 @@ document.getElementById('close').addEventListener('click', () => window.close())
 
 function translate(status) {
   switch (status) {
-    case 'running': return 'En cours';
-    case 'paused': return 'En pause';
-    case 'completed': return 'Terminé';
-    case 'stopped': return 'Arrêté';
-    case 'redirecting': return 'Redirection...';
-    default: return 'En attente';
+    case 'running': return 'Running';
+    case 'paused': return 'Paused';
+    case 'completed': return 'Completed';
+    case 'stopped': return 'Stopped';
+    case 'redirecting': return 'Redirecting...';
+    default: return 'Idle';
   }
 }
 
@@ -53,7 +53,7 @@ function refreshStatus() {
     progress.max = state.total || 0;
     progress.value = state.removed || 0;
     stateSpan.textContent = translate(state.status);
-    pauseBtn.textContent = state.status === 'paused' ? 'Reprendre' : 'Pause';
+    pauseBtn.textContent = state.status === 'paused' ? 'Resume' : 'Pause';
   });
 }
 

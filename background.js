@@ -73,7 +73,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!isConnectionsPage(tab.url)) {
           chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            func: () => confirm("Vous allez être redirigé vers une nouvelle page. Après la redirection, veuillez cliquer à nouveau sur le bouton 'Commencer' pour poursuivre le processus de suppression.")
+            func: () => confirm("You will be redirected to a new page. After the redirection, please click the 'Start' button again to continue the removal process.")
           }, results => {
             const proceed = results && results[0] && results[0].result;
             if (!proceed) {

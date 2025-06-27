@@ -1,24 +1,24 @@
 # LinkedIn Cleaner
 
-*Reprenez le contrôle de votre réseau professionnel, en un seul clic.*
+*Take back control of your professional network with a single click.*
 
-LinkedIn Cleaner est une extension Chrome minimaliste qui aide à gérer et nettoyer votre liste de connexions LinkedIn. Elle supprime automatiquement les relations affichées sur la page en simulant un comportement humain avec des pauses aléatoires.
+LinkedIn Cleaner is a minimalist Chrome extension that helps you manage and clean your list of LinkedIn connections. It automatically removes connections displayed on the page while simulating human behavior with random pauses.
 
 ## Installation
-1. Clonez ce dépôt.
-2. Ouvrez Chrome et rendez-vous sur `chrome://extensions`.
-3. Activez le mode développeur puis choisissez **Charger l'extension non empaquetée** et sélectionnez ce dossier.
+1. Clone this repository.
+2. Open Chrome and go to `chrome://extensions`.
+3. Enable Developer mode and choose **Load unpacked** and select this folder.
 
-## Utilisation
-1. Naviguez vers votre page de connexions LinkedIn : `https://www.linkedin.com/mynetwork/invite-connect/connections/`.
-2. Cliquez sur l'icône de l'extension puis sur **Commencer** pour lancer la suppression automatique.
-3. Utilisez **Pause** ou **Arrêter** pour contrôler le processus. Les contacts visibles seront retirés un par un. Rechargez la page pour traiter un nouveau lot si nécessaire.
+## Usage
+1. Navigate to your LinkedIn connections page: `https://www.linkedin.com/mynetwork/invite-connect/connections/`.
+2. Click the extension icon then **Start** to begin automatic removal.
+3. Use **Pause** or **Stop** to control the process. Visible contacts will be removed one by one. Reload the page to process another batch if necessary.
 
-## À qui s'adresse cette extension ?
-- Les professionnels en transition de carrière qui souhaitent réorienter leur réseau.
-- Les utilisateurs actifs dont la liste de connexions est devenue ingérable.
-- Les experts en marketing et vente qui veulent affiner leur audience.
-- Toute personne soucieuse de la qualité plutôt que de la quantité.
+## Who is this extension for?
+- Professionals in career transition who want to refocus their network.
+- Active users whose connection list has become unmanageable.
+- Marketing and sales experts looking to refine their audience.
+- Anyone who values quality over quantity.
 
-## Fonctionnement
-L'extension vérifie que vous êtes bien sur la page des connexions avant de lancer le script. Elle ouvre le menu d'actions de chaque contact, clique sur **Retirer la relation**, confirme la suppression et attend 1,5 à 2 secondes entre chaque contact pour reproduire un rythme humain. La logique d'injection est désormais gérée par un *service worker* pour plus de fiabilité, et le processus s'interrompt automatiquement lorsque vous quittez la page des connexions.
+## How it works
+The extension checks that you're on the connections page before running the script. It opens each contact's actions menu, clicks **Remove connection**, confirms the deletion and waits 1.5 to 2 seconds between contacts to mimic a human pace. The injection logic is now handled by a *service worker* for greater reliability, and the process automatically stops when you leave the connections page.
