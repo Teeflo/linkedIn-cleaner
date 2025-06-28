@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Suppression automatique des connexions LinkedIn</title>
+  <title>Automatic LinkedIn Connection Removal</title>
   <style>
     body { font-family: Arial, sans-serif; width: 300px; padding: 15px; background:#ffffff; color:#333; position:relative; }
     h1 { font-size:18px; color:#0073b1; text-align:center; margin-top:0; }
@@ -23,20 +23,20 @@
 </head>
 <body>
   <button id="close">&times;</button>
-  <h1>Suppression automatique des connexions LinkedIn</h1>
-  <label for="delay">Délai entre suppressions</label>
+  <h1>Automatic LinkedIn Connection Removal</h1>
+  <label for="delay">Delay between removals</label>
   <div class="range-wrap">
     <input type="range" id="delay" min="1" max="60" value="2">
     <span id="delayValue">2 sec</span>
   </div>
   <div class="controls">
-    <button id="start">Commencer</button>
+    <button id="start">Start</button>
     <button id="pause">Pause</button>
-    <button id="stop">Arrêter</button>
+    <button id="stop">Stop</button>
   </div>
   <progress id="progress" value="0" max="0"></progress>
   <div class="status">
-    <span id="counter">0/0</span> - <span id="state">En attente</span>
+    <span id="counter">0/0</span> - <span id="state">Idle</span>
   </div>
   <script src="popup.js"></script>
 </body>

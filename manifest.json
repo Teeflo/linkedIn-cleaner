@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Cleaner",
-  "description": "Reprenez le contrôle de votre réseau professionnel, en un seul clic.",
+  "description": "Take back control of your professional network with a single click.",
   "version": "1.0",
   "permissions": ["activeTab", "scripting", "tabs"],
   "host_permissions": ["https://www.linkedin.com/*"],
