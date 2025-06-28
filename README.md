@@ -1,24 +1,18 @@
-# LinkedIn Cleaner
+# Gmail Notifier
 
-*Take back control of your professional network with a single click.*
+*Receive desktop notifications for new Gmail messages.*
 
-LinkedIn Cleaner is a minimalist Chrome extension that helps you manage and clean your list of LinkedIn connections. It automatically removes connections displayed on the page while simulating human behavior with random pauses.
+This extension checks your Gmail inbox at regular intervals and alerts you when new emails arrive. Customize the badge color, notification sound and check interval.
 
 ## Installation
 1. Clone this repository.
-2. Open Chrome and go to `chrome://extensions`.
-3. Enable Developer mode and choose **Load unpacked** and select this folder.
+2. Open Chrome and navigate to `chrome://extensions`.
+3. Enable **Developer mode** and click **Load unpacked**, then select this folder.
 
-## Usage
-1. Navigate to your LinkedIn connections page: `https://www.linkedin.com/mynetwork/invite-connect/connections/`.
-2. Click the extension icon then **Start** to begin automatic removal.
-3. Use **Pause** or **Stop** to control the process. Visible contacts will be removed one by one. Reload the page to process another batch if necessary.
+## Options
+- **Check interval**: how often to poll Gmail.
+- **Badge color**: customize the toolbar badge.
+- **Notification sound**: choose among predefined sounds or upload your own (max 500KB).
 
-## Who is this extension for?
-- Professionals in career transition who want to refocus their network.
-- Active users whose connection list has become unmanageable.
-- Marketing and sales experts looking to refine their audience.
-- Anyone who values quality over quantity.
-
-## How it works
-The extension checks that you're on the connections page before running the script. It opens each contact's actions menu, clicks **Remove connection**, confirms the deletion and waits 1.5 to 2 seconds between contacts to mimic a human pace. The injection logic is now handled by a *service worker* for greater reliability, and the process automatically stops when you leave the connections page.
+## Permissions
+The extension requires access to `https://mail.google.com/*` to fetch your unread count and uses the Notifications and Storage APIs.

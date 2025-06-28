@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gmail Notifier Options</title>
+  <link rel="stylesheet" href="styles/options.css">
+</head>
+<body>
+  <h1>Gmail Notifier Settings</h1>
+  <label>
+    Check interval (seconds)
+    <input type="range" id="interval" min="30" max="600" step="30">
+    <span id="intervalValue"></span>
+  </label>
+  <label>
+    Badge color
+    <input type="color" id="badgeColor">
+  </label>
+  <label>
+    Notification sound
+    <select id="sound">
+      <option value="">Default</option>
+      <option value="sounds/notify1.ogg">Sound 1</option>
+      <option value="sounds/notify2.ogg">Sound 2</option>
+    </select>
+  </label>
+  <label>
+    Upload custom sound
+    <input type="file" id="customSound" accept=".mp3,.wav,.ogg">
+  </label>
+  <button id="save">Save</button>
+  <script src="options.js"></script>
+</body>
+</html>
