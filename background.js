@@ -14,7 +14,8 @@ let postsState = {
   status: 'idle',
   removed: 0,
   total: 0,
-  tabId: null
+  tabId: null,
+  delay: 2000
 };
 
 function isConnectionsPage(url) {
@@ -141,12 +142,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
         const tab = tabs[0];
         if (!tab) { sendResponse(); return; }
+        const delay = message.delay || 2000;
 
         const startPosts = () => {
           postsState.status = 'running';
           postsState.removed = 0;
           postsState.total = 0;
           postsState.tabId = tab.id;
+          postsState.delay = delay;
 
           chrome.scripting.executeScript({
             target: { tabId: tab.id },
@@ -159,7 +162,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: postsScript,
-            args: []
+            args: [delay]
           });
         };
 
@@ -331,7 +334,8 @@ function contentScript(delay) {
   process();
 }
 
-function postsScript() {
+function postsScript(delay) {
+  delay = delay || 2000;
   if (!/linkedin\.com\/in\/[^/]+\/recent-activity\/all\//.test(location.href)) {
     chrome.runtime.sendMessage({ action: 'postsCompleted' });
     return;
@@ -340,7 +344,7 @@ function postsScript() {
   window.__liCleanerPause = false;
 
   function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-  function randomDelay() { return 2000 + Math.floor(Math.random() * 3000); }
+  function randomDelay() { return delay + Math.floor(Math.random() * 3000); }
 
   async function loadAll() {
     let prevHeight = 0;

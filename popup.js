@@ -13,6 +13,8 @@ const postStopBtn = document.getElementById('postStop');
 const postCounter = document.getElementById('postCounter');
 const postStateSpan = document.getElementById('postState');
 const postProgress = document.getElementById('postProgress');
+const postDelayInput = document.getElementById('postDelay');
+const postDelayValue = document.getElementById('postDelayValue');
 
 function updateDelayDisplay() {
   delayValue.textContent = `${delayInput.value} sec`;
@@ -21,6 +23,13 @@ function updateDelayDisplay() {
 updateDelayDisplay();
 
 delayInput.addEventListener('input', updateDelayDisplay);
+
+function updatePostDelayDisplay() {
+  postDelayValue.textContent = `${postDelayInput.value} sec`;
+}
+
+updatePostDelayDisplay();
+postDelayInput.addEventListener('input', updatePostDelayDisplay);
 
 startBtn.addEventListener('click', () => {
   const delayMs = parseInt(delayInput.value, 10) * 1000;
@@ -36,7 +45,8 @@ stopBtn.addEventListener('click', () => {
 });
 
 postStartBtn.addEventListener('click', () => {
-  chrome.runtime.sendMessage({ action: 'startPosts' }, updatePostState);
+  const delayMs = parseInt(postDelayInput.value, 10) * 1000;
+  chrome.runtime.sendMessage({ action: 'startPosts', delay: delayMs }, updatePostState);
 });
 
 postPauseBtn.addEventListener('click', () => {

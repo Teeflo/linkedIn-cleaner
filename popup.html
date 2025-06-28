@@ -41,6 +41,11 @@
 
   <hr>
   <h1>Delete My Posts</h1>
+  <label for="postDelay">Delay between deletions</label>
+  <div class="range-wrap">
+    <input type="range" id="postDelay" min="1" max="60" value="3">
+    <span id="postDelayValue">3 sec</span>
+  </div>
   <div class="controls">
     <button id="postStart">Start</button>
     <button id="postPause">Pause</button>
