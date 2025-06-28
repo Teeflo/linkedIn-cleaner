@@ -392,11 +392,19 @@ function postsScript() {
       if (menu) {
         menu.click();
         await wait(500);
-        const deleteBtn = document.querySelector("div[role='menu'] button[aria-label*='Delete'], div[role='menu'] button[aria-label*='Supprimer']");
+        const deleteBtn = Array.from(
+          document.querySelectorAll(
+            "div.feed-shared-control-menu__dropdown-item[role='button']"
+          )
+        ).find(el => /Supprimer|Delete/i.test(el.innerText));
         if (deleteBtn) {
           deleteBtn.click();
           await wait(500);
-          const confirmBtn = document.querySelector("button.artdeco-button--danger");
+          const confirmBtn = Array.from(
+            document.querySelectorAll(
+              "button.artdeco-button--primary.artdeco-button--2"
+            )
+          ).find(el => /Supprimer|Delete/i.test(el.innerText));
           if (confirmBtn) { confirmBtn.click(); }
           chrome.runtime.sendMessage({ action: 'incrementPosts' });
           await next();
