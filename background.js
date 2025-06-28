@@ -1,4 +1,5 @@
 const CONNECTIONS_PATH = 'linkedin.com/mynetwork/invite-connect/connections/';
+const PROFILE_PATH = 'linkedin.com/in/';
 
 let state = {
   status: 'idle',
@@ -8,8 +9,19 @@ let state = {
   delay: 1500
 };
 
+let postsState = {
+  status: 'idle',
+  removed: 0,
+  total: 0,
+  tabId: null
+};
+
 function isConnectionsPage(url) {
   return url && url.includes(CONNECTIONS_PATH);
+}
+
+function isProfilePage(url) {
+  return url && url.includes(PROFILE_PATH);
 }
 
 function stopProcess() {
@@ -26,10 +38,29 @@ function stopProcess() {
   state.tabId = null;
 }
 
+function stopPostsProcess() {
+  if (postsState.tabId !== null) {
+    chrome.scripting.executeScript({
+      target: { tabId: postsState.tabId },
+      func: () => {
+        window.__liCleanerStop = true;
+        window.__liCleanerPause = false;
+      }
+    });
+  }
+  postsState.status = 'stopped';
+  postsState.tabId = null;
+}
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (tabId === state.tabId && changeInfo.status === 'loading') {
     if (!isConnectionsPage(tab.url)) {
       stopProcess();
+    }
+  }
+  if (tabId === postsState.tabId && changeInfo.status === 'loading') {
+    if (!isProfilePage(tab.url)) {
+      stopPostsProcess();
     }
   }
 });
@@ -37,6 +68,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.tabs.onRemoved.addListener(tabId => {
   if (tabId === state.tabId) {
     stopProcess();
+  }
+  if (tabId === postsState.tabId) {
+    stopPostsProcess();
   }
 });
 
@@ -98,8 +132,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       });
       return true;
+    case 'startPosts':
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        const tab = tabs[0];
+        if (!tab) { sendResponse(); return; }
+
+        const startPosts = () => {
+          postsState.status = 'running';
+          postsState.removed = 0;
+          postsState.total = 0;
+          postsState.tabId = tab.id;
+
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              window.__liCleanerStop = false;
+              window.__liCleanerPause = false;
+            }
+          });
+
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: postsScript,
+            args: []
+          });
+        };
+
+        if (!isProfilePage(tab.url)) {
+          sendResponse({ status: 'idle' });
+          return;
+        }
+
+        startPosts();
+        sendResponse({ status: postsState.status });
+      });
+      return true;
     case 'status':
       sendResponse(state);
+      break;
+    case 'statusPosts':
+      sendResponse(postsState);
       break;
     case 'pause':
       if (state.tabId !== null) {
@@ -112,18 +184,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       }
       break;
+    case 'pausePosts':
+      if (postsState.tabId !== null) {
+        const shouldPause = postsState.status === 'running';
+        postsState.status = shouldPause ? 'paused' : 'running';
+        chrome.scripting.executeScript({
+          target: { tabId: postsState.tabId },
+          func: p => { window.__liCleanerPause = p; },
+          args: [shouldPause]
+        });
+      }
+      break;
     case 'stop':
       stopProcess();
+      break;
+    case 'stopPosts':
+      stopPostsProcess();
       break;
     case 'increment':
       state.removed += 1;
       break;
+    case 'incrementPosts':
+      postsState.removed += 1;
+      break;
     case 'total':
       state.total = message.total;
+      break;
+    case 'totalPosts':
+      postsState.total = message.total;
       break;
     case 'completed':
       state.status = 'completed';
       state.tabId = null;
+      break;
+    case 'postsCompleted':
+      postsState.status = 'completed';
+      postsState.tabId = null;
       break;
   }
 });
@@ -193,6 +289,69 @@ function contentScript(delay) {
           confirmBtn.click();
         }
         chrome.runtime.sendMessage({ action: 'increment' });
+        await next();
+      } else {
+        await next();
+      }
+    } else {
+      await next();
+    }
+  }
+
+  process();
+}
+
+function postsScript() {
+  if (!location.href.includes('linkedin.com')) {
+    chrome.runtime.sendMessage({ action: 'postsCompleted' });
+    return;
+  }
+
+  window.__liCleanerPause = false;
+
+  const posts = Array.from(document.querySelectorAll('div.feed-shared-update-v2'));
+  chrome.runtime.sendMessage({ action: 'totalPosts', total: posts.length });
+
+  function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  function randomDelay() { return 2000 + Math.floor(Math.random() * 3000); }
+
+  let i = 0;
+  async function process() {
+    if (window.__liCleanerStop) {
+      chrome.runtime.sendMessage({ action: 'postsCompleted' });
+      return;
+    }
+    if (window.__liCleanerPause) {
+      setTimeout(process, 200);
+      return;
+    }
+    if (i >= posts.length) {
+      chrome.runtime.sendMessage({ action: 'postsCompleted' });
+      return;
+    }
+
+    const post = posts[i];
+    const menu = post.querySelector("button[aria-label*='More actions']");
+
+    async function next() {
+      i += 1;
+      while (window.__liCleanerPause && !window.__liCleanerStop) {
+        await wait(200);
+      }
+      await wait(randomDelay());
+      process();
+    }
+
+    if (menu) {
+      menu.click();
+      await wait(500);
+      const deleteBtn = document.querySelector("div[role='menu'] button[aria-label*='Delete']");
+      if (deleteBtn) {
+        deleteBtn.click();
+        await wait(500);
+        const confirmBtn = document.querySelector("button.artdeco-button--danger");
+        if (confirmBtn) { confirmBtn.click(); }
+        chrome.runtime.sendMessage({ action: 'incrementPosts' });
         await next();
       } else {
         await next();
