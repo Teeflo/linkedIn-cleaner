@@ -24,4 +24,4 @@ LinkedIn Cleaner is a minimalist Chrome extension that helps you manage and clea
 The extension checks that you're on the connections page before running the script. It opens each contact's actions menu, clicks **Remove connection**, confirms the deletion and waits 1.5 to 2 seconds between contacts to mimic a human pace. The injection logic is now handled by a *service worker* for greater reliability, and the process automatically stops when you leave the connections page.
 
 ## New: Delete your posts
-You can also remove your own posts from your profile. Open your profile page, click **Delete My Posts** and the extension will automatically delete visible posts with a 2-5 second delay between each action.
+You can also remove your own posts from your profile. When you press **Delete My Posts**, the extension verifies that you are on your posts page (`https://www.linkedin.com/in/@username/recent-activity/all/`). If not, it offers to redirect you there. Once on this page, it loads all available posts, then deletes them one by one with a 2-5&nbsp;second delay.

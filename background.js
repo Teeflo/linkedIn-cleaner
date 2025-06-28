@@ -1,5 +1,6 @@
 const CONNECTIONS_PATH = 'linkedin.com/mynetwork/invite-connect/connections/';
 const PROFILE_PATH = 'linkedin.com/in/';
+const POSTS_PATH = '/recent-activity/all/';
 
 let state = {
   status: 'idle',
@@ -22,6 +23,10 @@ function isConnectionsPage(url) {
 
 function isProfilePage(url) {
   return url && url.includes(PROFILE_PATH);
+}
+
+function isPostsPage(url) {
+  return url && /linkedin\.com\/in\/[^\/]+\/recent-activity\/all\//.test(url);
 }
 
 function stopProcess() {
@@ -59,7 +64,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
   }
   if (tabId === postsState.tabId && changeInfo.status === 'loading') {
-    if (!isProfilePage(tab.url)) {
+    if (!isPostsPage(tab.url)) {
       stopPostsProcess();
     }
   }
@@ -158,13 +163,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           });
         };
 
-        if (!isProfilePage(tab.url)) {
-          sendResponse({ status: 'idle' });
-          return;
-        }
+        const postsUrlMatch = tab.url.match(/linkedin\.com\/in\/([^\/]+)/);
+        if (!isPostsPage(tab.url)) {
+          if (!postsUrlMatch) {
+            sendResponse({ status: 'idle' });
+            return;
+          }
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => confirm("You will be redirected to your posts page. After the redirection, please click 'Start' again to continue the deletion process.")
+          }, results => {
+            const proceed = results && results[0] && results[0].result;
+            if (!proceed) {
+              sendResponse({ status: 'idle' });
+              return;
+            }
 
-        startPosts();
-        sendResponse({ status: postsState.status });
+            postsState.status = 'redirecting';
+            const postsUrl = `https://www.linkedin.com/in/${postsUrlMatch[1]}/recent-activity/all/`;
+            chrome.tabs.update(tab.id, { url: postsUrl });
+            const listener = (id, info, updatedTab) => {
+              if (id === tab.id && info.status === 'complete' && isPostsPage(updatedTab.url)) {
+                chrome.tabs.onUpdated.removeListener(listener);
+                startPosts();
+              }
+            };
+            chrome.tabs.onUpdated.addListener(listener);
+            sendResponse({ status: postsState.status });
+          });
+        } else {
+          startPosts();
+          sendResponse({ status: postsState.status });
+        }
       });
       return true;
     case 'status':
@@ -302,64 +332,84 @@ function contentScript(delay) {
 }
 
 function postsScript() {
-  if (!location.href.includes('linkedin.com')) {
+  if (!/linkedin\.com\/in\/[^/]+\/recent-activity\/all\//.test(location.href)) {
     chrome.runtime.sendMessage({ action: 'postsCompleted' });
     return;
   }
 
   window.__liCleanerPause = false;
 
-  const posts = Array.from(document.querySelectorAll('div.feed-shared-update-v2'));
-  chrome.runtime.sendMessage({ action: 'totalPosts', total: posts.length });
-
   function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
   function randomDelay() { return 2000 + Math.floor(Math.random() * 3000); }
 
-  let i = 0;
-  async function process() {
-    if (window.__liCleanerStop) {
-      chrome.runtime.sendMessage({ action: 'postsCompleted' });
-      return;
-    }
-    if (window.__liCleanerPause) {
-      setTimeout(process, 200);
-      return;
-    }
-    if (i >= posts.length) {
-      chrome.runtime.sendMessage({ action: 'postsCompleted' });
-      return;
-    }
-
-    const post = posts[i];
-    const menu = post.querySelector("button[aria-label*='More actions']");
-
-    async function next() {
-      i += 1;
-      while (window.__liCleanerPause && !window.__liCleanerStop) {
-        await wait(200);
-      }
-      await wait(randomDelay());
-      process();
-    }
-
-    if (menu) {
-      menu.click();
-      await wait(500);
-      const deleteBtn = document.querySelector("div[role='menu'] button[aria-label*='Delete']");
-      if (deleteBtn) {
-        deleteBtn.click();
-        await wait(500);
-        const confirmBtn = document.querySelector("button.artdeco-button--danger");
-        if (confirmBtn) { confirmBtn.click(); }
-        chrome.runtime.sendMessage({ action: 'incrementPosts' });
-        await next();
+  async function loadAll() {
+    let prevHeight = 0;
+    let stable = 0;
+    while (stable < 3) {
+      window.scrollTo(0, document.body.scrollHeight);
+      await wait(1000);
+      if (document.body.scrollHeight === prevHeight) {
+        stable += 1;
       } else {
-        await next();
+        stable = 0;
+        prevHeight = document.body.scrollHeight;
       }
-    } else {
-      await next();
     }
   }
 
-  process();
+  async function start() {
+    await loadAll();
+    const posts = Array.from(document.querySelectorAll('div.feed-shared-update-v2'));
+    chrome.runtime.sendMessage({ action: 'totalPosts', total: posts.length });
+
+    let i = 0;
+    async function process() {
+      if (window.__liCleanerStop) {
+        chrome.runtime.sendMessage({ action: 'postsCompleted' });
+        return;
+      }
+      if (window.__liCleanerPause) {
+        setTimeout(process, 200);
+        return;
+      }
+      if (i >= posts.length) {
+        chrome.runtime.sendMessage({ action: 'postsCompleted' });
+        return;
+      }
+
+      const post = posts[i];
+      const menu = post.querySelector("button.feed-shared-control-menu__trigger.artdeco-button.artdeco-button--tertiary.artdeco-button--muted.artdeco-button--1.artdeco-button--circle");
+
+      async function next() {
+        i += 1;
+        while (window.__liCleanerPause && !window.__liCleanerStop) {
+          await wait(200);
+        }
+        await wait(randomDelay());
+        process();
+      }
+
+      if (menu) {
+        menu.click();
+        await wait(500);
+        const deleteBtn = document.querySelector("div[role='menu'] button[aria-label*='Delete'], div[role='menu'] button[aria-label*='Supprimer']");
+        if (deleteBtn) {
+          deleteBtn.click();
+          await wait(500);
+          const confirmBtn = document.querySelector("button.artdeco-button--danger");
+          if (confirmBtn) { confirmBtn.click(); }
+          chrome.runtime.sendMessage({ action: 'incrementPosts' });
+          await next();
+        } else {
+          await next();
+        }
+      } else {
+        await next();
+      }
+    }
+
+    process();
+  }
+
+  start();
 }
