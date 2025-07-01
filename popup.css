@@ -32,8 +32,30 @@ h1 {
   margin: 0 0 10px;
 }
 
+#modeSelect {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 6px;
+  font-size: 14px;
+  border-radius: var(--radius);
+  border: 1px solid #ccc;
+}
+
 section {
   margin-bottom: 18px;
+}
+
+.mode-section {
+  opacity: 1;
+  max-height: 1000px;
+  transition: opacity 0.3s ease, max-height 0.3s ease;
+  overflow: hidden;
+}
+
+.mode-section.hidden {
+  opacity: 0;
+  max-height: 0;
+  pointer-events: none;
 }
 
 label {
@@ -123,4 +145,9 @@ progress {
   text-align: center;
   margin-top: 5px;
   font-size: 14px;
+}
+
+#resetState {
+  width: 100%;
+  margin-top: 10px;
 }

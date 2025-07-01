@@ -3,7 +3,7 @@ const POSTS_PATH = '/recent-activity/all/';
 const SENT_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/sent/';
 const RECEIVED_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/';
 
-let state = {
+const defaultState = {
   status: 'idle',
   removed: 0,
   total: 0,
@@ -11,7 +11,7 @@ let state = {
   delay: 1500
 };
 
-let postsState = {
+const defaultPostsState = {
   status: 'idle',
   removed: 0,
   total: 0,
@@ -19,7 +19,7 @@ let postsState = {
   delay: 2000
 };
 
-let sentInvState = {
+const defaultSentInvState = {
   status: 'idle',
   removed: 0,
   total: 0,
@@ -27,7 +27,7 @@ let sentInvState = {
   delay: 1500
 };
 
-let receivedInvState = {
+const defaultReceivedInvState = {
   status: 'idle',
   accepted: 0,
   ignored: 0,
@@ -36,6 +36,31 @@ let receivedInvState = {
   delay: 1500,
   mode: null
 };
+
+let state = { ...defaultState };
+let postsState = { ...defaultPostsState };
+let sentInvState = { ...defaultSentInvState };
+let receivedInvState = { ...defaultReceivedInvState };
+
+function saveAllStates() {
+  chrome.storage.local.set({
+    connectionsState: state,
+    postsState,
+    sentInvState,
+    receivedInvState
+  });
+}
+
+chrome.storage.local.get(
+  ['connectionsState', 'postsState', 'sentInvState', 'receivedInvState'],
+  data => {
+    if (data.connectionsState) Object.assign(state, data.connectionsState);
+    if (data.postsState) Object.assign(postsState, data.postsState);
+    if (data.sentInvState) Object.assign(sentInvState, data.sentInvState);
+    if (data.receivedInvState)
+      Object.assign(receivedInvState, data.receivedInvState);
+  }
+);
 
 function isConnectionsPage(url) {
   return url && url.includes(CONNECTIONS_PATH);
@@ -74,6 +99,7 @@ function stopProcess() {
   }
   state.status = 'stopped';
   state.tabId = null;
+  saveAllStates();
 }
 
 function stopPostsProcess() {
@@ -88,6 +114,7 @@ function stopPostsProcess() {
   }
   postsState.status = 'stopped';
   postsState.tabId = null;
+  saveAllStates();
 }
 
 function stopSentInvProcess() {
@@ -102,6 +129,7 @@ function stopSentInvProcess() {
   }
   sentInvState.status = 'stopped';
   sentInvState.tabId = null;
+  saveAllStates();
 }
 
 function stopReceivedInvProcess() {
@@ -117,6 +145,7 @@ function stopReceivedInvProcess() {
   receivedInvState.status = 'stopped';
   receivedInvState.tabId = null;
   receivedInvState.mode = null;
+  saveAllStates();
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -171,6 +200,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           state.total = 0;
           state.tabId = tab.id;
           state.delay = delay;
+          saveAllStates();
 
           execScript({
             target: { tabId: tab.id },
@@ -207,10 +237,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
             };
             chrome.tabs.onUpdated.addListener(listener);
+            saveAllStates();
             sendResponse({ status: state.status });
           });
         } else {
           startCleaner();
+          saveAllStates();
           sendResponse({ status: state.status });
         }
       });
@@ -227,6 +259,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           postsState.total = 0;
           postsState.tabId = tab.id;
           postsState.delay = delay;
+          saveAllStates();
 
           execScript({
             target: { tabId: tab.id },
@@ -265,6 +298,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
             };
             chrome.tabs.onUpdated.addListener(listener);
+            saveAllStates();
             sendResponse({ status: postsState.status });
           });
         };
@@ -297,6 +331,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           }
         } else {
           startPosts();
+          saveAllStates();
           sendResponse({ status: postsState.status });
         }
       });
@@ -313,6 +348,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sentInvState.total = 0;
           sentInvState.tabId = tab.id;
           sentInvState.delay = delay;
+          saveAllStates();
 
           execScript({
             target: { tabId: tab.id },
@@ -343,10 +379,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
             };
             chrome.tabs.onUpdated.addListener(listener);
+            saveAllStates();
             sendResponse({ status: sentInvState.status });
           });
         } else {
           startSent();
+          saveAllStates();
           sendResponse({ status: sentInvState.status });
         }
       });
@@ -366,6 +404,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           receivedInvState.tabId = tab.id;
           receivedInvState.delay = delay;
           receivedInvState.mode = mode;
+          saveAllStates();
 
           execScript({
             target: { tabId: tab.id },
@@ -396,10 +435,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
             };
             chrome.tabs.onUpdated.addListener(listener);
+            saveAllStates();
             sendResponse({ status: receivedInvState.status });
           });
         } else {
           startReceived();
+          saveAllStates();
           sendResponse({ status: receivedInvState.status });
         }
       });
@@ -425,6 +466,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           func: p => { window.__liCleanerPause = p; },
           args: [shouldPause]
         });
+        saveAllStates();
       }
       break;
     case 'pausePosts':
@@ -436,6 +478,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           func: p => { window.__liCleanerPause = p; },
           args: [shouldPause]
         });
+        saveAllStates();
       }
       break;
     case 'stop':
@@ -453,6 +496,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           func: p => { window.__liCleanerPause = p; },
           args: [shouldPause]
         });
+        saveAllStates();
       }
       break;
     case 'pauseReceived':
@@ -464,13 +508,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           func: p => { window.__liCleanerPause = p; },
           args: [shouldPause]
         });
+        saveAllStates();
       }
       break;
     case 'sentLoading':
       sentInvState.status = 'loading';
+      saveAllStates();
       break;
     case 'sentLoaded':
       sentInvState.status = 'running';
+      saveAllStates();
       break;
     case 'stopSent':
       stopSentInvProcess();
@@ -480,47 +527,74 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     case 'increment':
       state.removed += 1;
+      saveAllStates();
       break;
     case 'incrementPosts':
       postsState.removed += 1;
+      saveAllStates();
       break;
     case 'incrementSent':
       sentInvState.removed += 1;
+      saveAllStates();
       break;
     case 'incrementAccepted':
       receivedInvState.accepted += 1;
+      saveAllStates();
       break;
     case 'incrementIgnored':
       receivedInvState.ignored += 1;
+      saveAllStates();
       break;
     case 'total':
       state.total = message.total;
+      saveAllStates();
       break;
     case 'totalPosts':
       postsState.total = message.total;
+      saveAllStates();
       break;
     case 'totalSent':
       sentInvState.total = message.total;
+      saveAllStates();
       break;
     case 'totalReceived':
       receivedInvState.total = message.total;
+      saveAllStates();
       break;
     case 'completed':
       state.status = 'completed';
       state.tabId = null;
+      saveAllStates();
       break;
     case 'postsCompleted':
       postsState.status = 'completed';
       postsState.tabId = null;
+      saveAllStates();
       break;
     case 'sentCompleted':
       sentInvState.status = 'completed';
       sentInvState.tabId = null;
+      saveAllStates();
       break;
     case 'receivedCompleted':
       receivedInvState.status = 'completed';
       receivedInvState.tabId = null;
       receivedInvState.mode = null;
+      saveAllStates();
+      break;
+    case 'resetState':
+      state = { ...defaultState };
+      postsState = { ...defaultPostsState };
+      sentInvState = { ...defaultSentInvState };
+      receivedInvState = { ...defaultReceivedInvState };
+      chrome.storage.local.remove([
+        'connectionsState',
+        'postsState',
+        'sentInvState',
+        'receivedInvState',
+        'selectedMode'
+      ]);
+      saveAllStates();
       break;
   }
 });

@@ -37,6 +37,65 @@ const recvProgress = document.getElementById('recvProgress');
 const recvDelayInput = document.getElementById('recvDelay');
 const recvDelayValue = document.getElementById('recvDelayValue');
 
+const modeSelect = document.getElementById('modeSelect');
+const resetStateBtn = document.getElementById('resetState');
+const sections = {
+  connections: document.getElementById('connections'),
+  posts: document.getElementById('posts'),
+  sent: document.getElementById('sent'),
+  received: document.getElementById('received')
+};
+
+function showSection(id) {
+  Object.values(sections).forEach(sec => {
+    if (!id || sec.id !== id) {
+      sec.classList.add('hidden');
+    } else {
+      sec.classList.remove('hidden');
+    }
+  });
+}
+
+chrome.storage.local.get(
+  ['selectedMode', 'connectionsState', 'postsState', 'sentInvState', 'receivedInvState'],
+  data => {
+    const stored = data.selectedMode || '';
+    modeSelect.value = stored;
+    showSection(stored);
+
+    if (data.connectionsState && typeof data.connectionsState.delay === 'number') {
+      delayInput.value = data.connectionsState.delay / 1000;
+    }
+    if (data.postsState && typeof data.postsState.delay === 'number') {
+      postDelayInput.value = data.postsState.delay / 1000;
+    }
+    if (data.sentInvState && typeof data.sentInvState.delay === 'number') {
+      sentDelayInput.value = data.sentInvState.delay / 1000;
+    }
+    if (data.receivedInvState && typeof data.receivedInvState.delay === 'number') {
+      recvDelayInput.value = data.receivedInvState.delay / 1000;
+    }
+
+    updateDelayDisplay();
+    updatePostDelayDisplay();
+    updateSentDelayDisplay();
+    updateRecvDelayDisplay();
+  }
+);
+
+modeSelect.addEventListener('change', () => {
+  const value = modeSelect.value;
+  chrome.storage.local.set({ selectedMode: value });
+  showSection(value);
+});
+
+resetStateBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'resetState' });
+  chrome.storage.local.remove('selectedMode');
+  modeSelect.value = '';
+  showSection('');
+});
+
 function updateDelayDisplay() {
   delayValue.textContent = `${delayInput.value} sec`;
 }
