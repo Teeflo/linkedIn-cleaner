@@ -167,11 +167,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         };
 
         const postsUrlMatch = tab.url.match(/linkedin\.com\/in\/([^\/]+)/);
-        if (!isPostsPage(tab.url)) {
-          if (!postsUrlMatch) {
-            sendResponse({ status: 'idle' });
-            return;
-          }
+        const handleRedirect = username => {
           chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => confirm("You will be redirected to your posts page. After the redirection, please click 'Start' again to continue the deletion process.")
@@ -183,7 +179,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
 
             postsState.status = 'redirecting';
-            const postsUrl = `https://www.linkedin.com/in/${postsUrlMatch[1]}/recent-activity/all/`;
+            const postsUrl = `https://www.linkedin.com/in/${username}/recent-activity/all/`;
             chrome.tabs.update(tab.id, { url: postsUrl });
             const listener = (id, info, updatedTab) => {
               if (id === tab.id && info.status === 'complete' && isPostsPage(updatedTab.url)) {
@@ -194,6 +190,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             chrome.tabs.onUpdated.addListener(listener);
             sendResponse({ status: postsState.status });
           });
+        };
+
+        if (!isPostsPage(tab.url)) {
+          if (postsUrlMatch) {
+            handleRedirect(postsUrlMatch[1]);
+          } else {
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: () => {
+                const link = Array.from(document.querySelectorAll('a[href*="/in/"]'))
+                  .map(a => a.getAttribute('href'))
+                  .find(h => /\/in\/[^/]+\/?$/.test(h || ''));
+                return link || null;
+              }
+            }, res => {
+              const url = res && res[0] && res[0].result;
+              const match = url && url.match(/\/in\/([^/]+)/);
+              if (match) {
+                handleRedirect(match[1]);
+              } else {
+                chrome.scripting.executeScript({
+                  target: { tabId: tab.id },
+                  func: () => alert('Please navigate to your LinkedIn profile first.')
+                });
+                sendResponse({ status: 'idle' });
+              }
+            });
+          }
         } else {
           startPosts();
           sendResponse({ status: postsState.status });
