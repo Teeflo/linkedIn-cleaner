@@ -803,13 +803,35 @@ function sentInvitationsScript(delay) {
     }
   }
 
+  function isAdElement(el) {
+    if (!el) return false;
+    const adRegex = /\b(ad|ads|advertisement|sponsored)\b/i;
+    if (adRegex.test(el.className || '')) return true;
+    if (Object.keys(el.dataset || {}).some(key => adRegex.test(key))) return true;
+    const link = el.closest('a[href]');
+    if (link && !link.href.includes('linkedin.com')) return true;
+    return isAdElement(el.parentElement);
+  }
+
+  function isValidWithdrawButton(btn) {
+    if (!btn) return false;
+    if (!/Retirer|Withdraw/i.test(btn.innerText)) return false;
+    const card = btn.closest('li.invitation-card, div.invitation-card');
+    if (!card) return false;
+    if (isAdElement(card)) return false;
+    return true;
+  }
+
   async function start() {
     chrome.runtime.sendMessage({ action: 'sentLoading' });
     await loadAll();
     chrome.runtime.sendMessage({ action: 'sentLoaded' });
     const buttons = Array.from(
-      document.querySelectorAll("button[data-view-name='sent-invitations-withdraw-single']")
-    );
+      document.querySelectorAll(
+        "button[data-view-name='sent-invitations-withdraw-single'], " +
+        "button[data-control-name='withdraw_single']"
+      )
+    ).filter(isValidWithdrawButton);
     chrome.runtime.sendMessage({ action: 'totalSent', total: buttons.length });
 
   let i = 0;
@@ -833,12 +855,15 @@ function sentInvitationsScript(delay) {
       process();
     }
 
-    if (btn && btn.offsetParent !== null) {
+    if (btn && btn.offsetParent !== null && isValidWithdrawButton(btn)) {
       btn.click();
-      await wait(500);
+      await wait(600);
       const confirmBtn = Array.from(document.querySelectorAll('button'))
         .find(b => /Retirer|Withdraw|Supprimer/i.test(b.innerText));
-      if (confirmBtn) { confirmBtn.click(); }
+      if (confirmBtn && confirmBtn.offsetParent !== null) {
+        confirmBtn.click();
+        await wait(400);
+      }
       chrome.runtime.sendMessage({ action: 'incrementSent' });
       await next();
     } else {
