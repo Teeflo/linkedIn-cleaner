@@ -689,6 +689,7 @@ function postsScript(delay) {
 }
 
 function sentInvitationsScript(delay) {
+  const SENT_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/sent/';
   delay = delay || 1500;
   if (!location.href.includes(SENT_INV_PATH)) {
     chrome.runtime.sendMessage({ action: 'sentCompleted' });
@@ -737,8 +738,12 @@ function sentInvitationsScript(delay) {
 }
 
 function receivedInvitationsScript(delay, mode) {
+  const RECEIVED_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/';
   delay = delay || 1500;
-  if (!isReceivedInvPage(location.href)) {
+  function isReceivedInvPageLocal(url) {
+    return url && url.includes(RECEIVED_INV_PATH) && !url.includes('/sent/');
+  }
+  if (!isReceivedInvPageLocal(location.href)) {
     chrome.runtime.sendMessage({ action: 'receivedCompleted' });
     return;
   }
