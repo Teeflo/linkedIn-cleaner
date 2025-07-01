@@ -1,5 +1,4 @@
 const CONNECTIONS_PATH = 'linkedin.com/mynetwork/invite-connect/connections/';
-const PROFILE_PATH = 'linkedin.com/in/';
 const POSTS_PATH = '/recent-activity/all/';
 
 let state = {
@@ -22,17 +21,22 @@ function isConnectionsPage(url) {
   return url && url.includes(CONNECTIONS_PATH);
 }
 
-function isProfilePage(url) {
-  return url && url.includes(PROFILE_PATH);
-}
-
 function isPostsPage(url) {
   return url && /linkedin\.com\/in\/[^\/]+\/recent-activity\/all\//.test(url);
 }
 
+function execScript(injection, callback) {
+  chrome.scripting.executeScript(injection, (...args) => {
+    if (chrome.runtime.lastError) {
+      console.error(chrome.runtime.lastError.message);
+    }
+    if (callback) callback(...args);
+  });
+}
+
 function stopProcess() {
   if (state.tabId !== null) {
-    chrome.scripting.executeScript({
+    execScript({
       target: { tabId: state.tabId },
       func: () => {
         window.__liCleanerStop = true;
@@ -46,7 +50,7 @@ function stopProcess() {
 
 function stopPostsProcess() {
   if (postsState.tabId !== null) {
-    chrome.scripting.executeScript({
+    execScript({
       target: { tabId: postsState.tabId },
       func: () => {
         window.__liCleanerStop = true;
@@ -95,7 +99,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           state.tabId = tab.id;
           state.delay = delay;
 
-          chrome.scripting.executeScript({
+          execScript({
             target: { tabId: tab.id },
             func: () => {
               window.__liCleanerStop = false;
@@ -103,7 +107,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
           });
 
-          chrome.scripting.executeScript({
+          execScript({
             target: { tabId: tab.id },
             func: contentScript,
             args: [delay]
@@ -111,7 +115,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         };
 
         if (!isConnectionsPage(tab.url)) {
-          chrome.scripting.executeScript({
+          execScript({
             target: { tabId: tab.id },
             func: () => confirm("You will be redirected to a new page. After the redirection, please click the 'Start' button again to continue the removal process.")
           }, results => {
@@ -151,7 +155,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           postsState.tabId = tab.id;
           postsState.delay = delay;
 
-          chrome.scripting.executeScript({
+          execScript({
             target: { tabId: tab.id },
             func: () => {
               window.__liCleanerStop = false;
@@ -159,7 +163,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
           });
 
-          chrome.scripting.executeScript({
+          execScript({
             target: { tabId: tab.id },
             func: postsScript,
             args: [delay]
@@ -168,7 +172,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         const postsUrlMatch = tab.url.match(/linkedin\.com\/in\/([^\/]+)/);
         const handleRedirect = username => {
-          chrome.scripting.executeScript({
+          execScript({
             target: { tabId: tab.id },
             func: () => confirm("You will be redirected to your posts page. After the redirection, please click 'Start' again to continue the deletion process.")
           }, results => {
@@ -196,7 +200,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           if (postsUrlMatch) {
             handleRedirect(postsUrlMatch[1]);
           } else {
-            chrome.scripting.executeScript({
+            execScript({
               target: { tabId: tab.id },
               func: () => {
                 const link = Array.from(document.querySelectorAll('a[href*="/in/"]'))
@@ -210,7 +214,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               if (match) {
                 handleRedirect(match[1]);
               } else {
-                chrome.scripting.executeScript({
+                execScript({
                   target: { tabId: tab.id },
                   func: () => alert('Please navigate to your LinkedIn profile first.')
                 });
@@ -234,7 +238,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (state.tabId !== null) {
         const shouldPause = state.status === 'running';
         state.status = shouldPause ? 'paused' : 'running';
-        chrome.scripting.executeScript({
+        execScript({
           target: { tabId: state.tabId },
           func: p => { window.__liCleanerPause = p; },
           args: [shouldPause]
@@ -245,7 +249,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (postsState.tabId !== null) {
         const shouldPause = postsState.status === 'running';
         postsState.status = shouldPause ? 'paused' : 'running';
-        chrome.scripting.executeScript({
+        execScript({
           target: { tabId: postsState.tabId },
           func: p => { window.__liCleanerPause = p; },
           args: [shouldPause]
