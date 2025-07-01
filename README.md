@@ -25,3 +25,6 @@ The extension checks that you're on the connections page before running the scri
 
 ## New: Delete your posts
 You can also remove your own posts from your profile. When you press **Delete My Posts**, the extension first checks that you are on your posts page (`https://www.linkedin.com/in/@username/recent-activity/all/`). If you are somewhere else, a confirmation dialog is shown and you are redirected to the correct page. Once there, click **Start** again to begin the deletion. The script loads all available posts and deletes them sequentially with a random delay of up to three seconds added to the chosen interval.
+
+## License
+This project is licensed under the [MIT License](LICENSE).

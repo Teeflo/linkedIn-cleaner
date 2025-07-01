@@ -4,7 +4,13 @@
   "description": "Take back control of your professional network with a single click.",
   "version": "1.0",
   "permissions": ["activeTab", "scripting", "tabs"],
-  "host_permissions": ["https://www.linkedin.com/*"],
+  "host_permissions": [
+    "https://www.linkedin.com/mynetwork/invite-connect/connections/*",
+    "https://www.linkedin.com/in/*/recent-activity/all/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "background": {
     "service_worker": "background.js"
   },
