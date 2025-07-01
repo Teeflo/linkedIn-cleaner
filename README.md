@@ -21,10 +21,10 @@ LinkedIn Cleaner is a minimalist Chrome extension that helps you manage and clea
 - Anyone who values quality over quantity.
 
 ## How it works
-The extension checks that you're on the connections page before running the script. It opens each contact's actions menu, clicks **Remove connection**, confirms the deletion and waits 1.5 to 2 seconds between contacts to mimic a human pace. The injection logic is now handled by a *service worker* for greater reliability, and the process automatically stops when you leave the connections page.
+The extension checks that you're on the connections page before running the script. If you start the cleanup from somewhere else, it redirects you to the correct page and begins automatically once the list is detected. It opens each contact's actions menu, clicks **Remove connection**, confirms the deletion and waits 1.5 to 2 seconds between contacts to mimic a human pace. The injection logic is now handled by a *service worker* for greater reliability, and the process automatically stops when you leave the connections page.
 
 ## New: Delete your posts
-You can also remove your own posts from your profile. When you press **Delete My Posts**, the extension first checks that you are on your posts page (`https://www.linkedin.com/in/@username/recent-activity/all/`). If you are somewhere else, a confirmation dialog is shown and you are redirected to the correct page. Once there, click **Start** again to begin the deletion. The script loads all available posts and deletes them sequentially with a random delay of up to three seconds added to the chosen interval.
+You can also remove your own posts from your profile. When you press **Delete My Posts**, the extension first checks that you are on your posts page (`https://www.linkedin.com/in/@username/recent-activity/all/`). If you are somewhere else, a confirmation dialog is shown and you are redirected to the correct page. The cleanup starts automatically once the page is loaded and the posts are detected. The script loads all available posts and deletes them sequentially with a random delay of up to three seconds added to the chosen interval.
 
 ## License
 This project is licensed under the [MIT License](LICENSE).

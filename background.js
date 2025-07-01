@@ -117,7 +117,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!isConnectionsPage(tab.url)) {
           execScript({
             target: { tabId: tab.id },
-            func: () => confirm("You will be redirected to a new page. After the redirection, please click the 'Start' button again to continue the removal process.")
+            func: () => confirm("You will be redirected to your connections page. The removal will start automatically after redirection. Continue?")
           }, results => {
             const proceed = results && results[0] && results[0].result;
             if (!proceed) {
@@ -128,7 +128,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             state.status = 'redirecting';
             chrome.tabs.update(tab.id, { url: 'https://www.linkedin.com/mynetwork/invite-connect/connections/' });
             const listener = (id, info, updatedTab) => {
-              if (id === tab.id && info.status === 'complete' && isConnectionsPage(updatedTab.url)) {
+              const url = info.url || updatedTab.url;
+              if (id === tab.id && isConnectionsPage(url) && (info.status === 'complete' || info.url)) {
                 chrome.tabs.onUpdated.removeListener(listener);
                 startCleaner();
               }
