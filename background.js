@@ -62,6 +62,50 @@ function stopPostsProcess() {
   postsState.tabId = null;
 }
 
+function startConnectionsCleanup(tabId, delay) {
+  state.status = 'running';
+  state.removed = 0;
+  state.total = 0;
+  state.tabId = tabId;
+  state.delay = delay;
+
+  execScript({
+    target: { tabId },
+    func: () => {
+      window.__liCleanerStop = false;
+      window.__liCleanerPause = false;
+    }
+  });
+
+  execScript({
+    target: { tabId },
+    func: contentScript,
+    args: [delay]
+  });
+}
+
+function startPostsCleanup(tabId, delay) {
+  postsState.status = 'running';
+  postsState.removed = 0;
+  postsState.total = 0;
+  postsState.tabId = tabId;
+  postsState.delay = delay;
+
+  execScript({
+    target: { tabId },
+    func: () => {
+      window.__liCleanerStop = false;
+      window.__liCleanerPause = false;
+    }
+  });
+
+  execScript({
+    target: { tabId },
+    func: postsScript,
+    args: [delay]
+  });
+}
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (tabId === state.tabId && changeInfo.status === 'loading') {
     if (!isConnectionsPage(tab.url)) {
@@ -72,6 +116,19 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (!isPostsPage(tab.url)) {
       stopPostsProcess();
     }
+  }
+
+  if (changeInfo.status === 'complete') {
+    chrome.storage.session.get(['connectionRedirect', 'postsRedirect'], data => {
+      if (data.connectionRedirect && tabId === data.connectionRedirect.tabId && isConnectionsPage(tab.url)) {
+        chrome.storage.session.remove('connectionRedirect');
+        startConnectionsCleanup(tabId, data.connectionRedirect.delay);
+      }
+      if (data.postsRedirect && tabId === data.postsRedirect.tabId && isPostsPage(tab.url)) {
+        chrome.storage.session.remove('postsRedirect');
+        startPostsCleanup(tabId, data.postsRedirect.delay);
+      }
+    });
   }
 });
 
@@ -92,27 +149,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!tab) { sendResponse(); return; }
         const delay = message.delay || 1500;
 
-        const startCleaner = () => {
-          state.status = 'running';
-          state.removed = 0;
-          state.total = 0;
-          state.tabId = tab.id;
-          state.delay = delay;
-
-          execScript({
-            target: { tabId: tab.id },
-            func: () => {
-              window.__liCleanerStop = false;
-              window.__liCleanerPause = false;
-            }
-          });
-
-          execScript({
-            target: { tabId: tab.id },
-            func: contentScript,
-            args: [delay]
-          });
-        };
+        const startCleaner = () => startConnectionsCleanup(tab.id, delay);
 
         if (!isConnectionsPage(tab.url)) {
           execScript({
@@ -126,15 +163,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
 
             state.status = 'redirecting';
+            state.tabId = tab.id;
+            state.delay = delay;
+            chrome.storage.session.set({ connectionRedirect: { tabId: tab.id, delay } });
             chrome.tabs.update(tab.id, { url: 'https://www.linkedin.com/mynetwork/invite-connect/connections/' });
-            const listener = (id, info, updatedTab) => {
-              const url = info.url || updatedTab.url;
-              if (id === tab.id && isConnectionsPage(url) && (info.status === 'complete' || info.url)) {
-                chrome.tabs.onUpdated.removeListener(listener);
-                startCleaner();
-              }
-            };
-            chrome.tabs.onUpdated.addListener(listener);
             sendResponse({ status: state.status });
           });
         } else {
@@ -149,33 +181,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!tab) { sendResponse(); return; }
         const delay = message.delay || 2000;
 
-        const startPosts = () => {
-          postsState.status = 'running';
-          postsState.removed = 0;
-          postsState.total = 0;
-          postsState.tabId = tab.id;
-          postsState.delay = delay;
-
-          execScript({
-            target: { tabId: tab.id },
-            func: () => {
-              window.__liCleanerStop = false;
-              window.__liCleanerPause = false;
-            }
-          });
-
-          execScript({
-            target: { tabId: tab.id },
-            func: postsScript,
-            args: [delay]
-          });
-        };
+        const startPosts = () => startPostsCleanup(tab.id, delay);
 
         const postsUrlMatch = tab.url.match(/linkedin\.com\/in\/([^\/]+)/);
         const handleRedirect = username => {
           execScript({
             target: { tabId: tab.id },
-            func: () => confirm("You will be redirected to your posts page. After the redirection, please click 'Start' again to continue the deletion process.")
+            func: () => confirm("You will be redirected to your posts page. The removal will start automatically after redirection. Continue?")
           }, results => {
             const proceed = results && results[0] && results[0].result;
             if (!proceed) {
@@ -184,15 +196,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
 
             postsState.status = 'redirecting';
+            postsState.tabId = tab.id;
+            postsState.delay = delay;
             const postsUrl = `https://www.linkedin.com/in/${username}/recent-activity/all/`;
+            chrome.storage.session.set({ postsRedirect: { tabId: tab.id, delay } });
             chrome.tabs.update(tab.id, { url: postsUrl });
-            const listener = (id, info, updatedTab) => {
-              if (id === tab.id && info.status === 'complete' && isPostsPage(updatedTab.url)) {
-                chrome.tabs.onUpdated.removeListener(listener);
-                startPosts();
-              }
-            };
-            chrome.tabs.onUpdated.addListener(listener);
             sendResponse({ status: postsState.status });
           });
         };
