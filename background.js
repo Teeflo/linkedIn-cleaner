@@ -18,11 +18,27 @@ let postsState = {
 };
 
 function isConnectionsPage(url) {
-  return url && url.includes(CONNECTIONS_PATH);
+  try {
+    const u = new URL(url);
+    return (
+      u.hostname === 'www.linkedin.com' &&
+      u.pathname.startsWith('/mynetwork/invite-connect/connections/')
+    );
+  } catch {
+    return false;
+  }
 }
 
 function isPostsPage(url) {
-  return url && /linkedin\.com\/in\/[^\/]+\/recent-activity\/all\//.test(url);
+  try {
+    const u = new URL(url);
+    return (
+      u.hostname === 'www.linkedin.com' &&
+      /\/in\/[^/]+\/recent-activity\/all\//.test(u.pathname)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function execScript(injection, callback) {
@@ -299,64 +315,47 @@ function contentScript(delay) {
   function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
   function randomDelay() { return delay + Math.floor(Math.random() * 500); }
 
-  let i = 0;
   async function process() {
-    if (window.__liCleanerStop) {
-      chrome.runtime.sendMessage({ action: 'completed' });
-      return;
-    }
-    if (window.__liCleanerPause) {
-      setTimeout(process, 200);
-      return;
-    }
-    if (i >= cards.length) {
-      chrome.runtime.sendMessage({ action: 'completed' });
-      return;
-    }
-
-    const card = cards[i];
-    const moreBtn = card.querySelector(
-      "button.mn-connection-card__dropdown-trigger, " +
-      "button[aria-label*='More actions'], " +
-      "button[aria-label*='Plus d\\u2019actions'], " +
-      "button[aria-label*=\"Plus d'action\"]"
-    );
-
-    async function next() {
-      i += 1;
+    for (let i = 0; i < cards.length && !window.__liCleanerStop; i++) {
       while (window.__liCleanerPause && !window.__liCleanerStop) {
         await wait(200);
       }
+
+      const card = cards[i];
+      const moreBtn = card.querySelector(
+        "button.mn-connection-card__dropdown-trigger, " +
+        "button[aria-label*='More actions'], " +
+        "button[aria-label*='Plus d\\u2019actions'], " +
+        "button[aria-label*=\"Plus d'action\"]"
+      );
+
+      if (moreBtn) {
+        moreBtn.click();
+        await wait(500);
+        const removeBtn = document.querySelector(
+          "div.mn-connection-card__dropdown-item button[aria-label*='Remove connection'], " +
+          "div.mn-connection-card__dropdown-item button[aria-label*='Retirer la relation'], " +
+          "div.mn-connection-card__dropdown-item button[aria-label*='Supprimer la relation'], " +
+          "div.mn-connection-card__dropdown-item button[aria-label*='Supprimer']"
+        );
+        if (removeBtn) {
+          removeBtn.click();
+          await wait(500);
+          const confirmBtn = document.querySelector(
+            "button.artdeco-button--danger, button[aria-label*='Remove'], button[aria-label*='Retirer'], button[aria-label*='Supprimer']"
+          );
+          if (confirmBtn) {
+            confirmBtn.click();
+          }
+          chrome.runtime.sendMessage({ action: 'increment' });
+        }
+      }
+
+      if (window.__liCleanerStop) break;
       await wait(randomDelay());
-      process();
     }
 
-    if (moreBtn) {
-      moreBtn.click();
-      await wait(500);
-      const removeBtn = document.querySelector(
-        "div.mn-connection-card__dropdown-item button[aria-label*='Remove connection'], " +
-        "div.mn-connection-card__dropdown-item button[aria-label*='Retirer la relation'], " +
-        "div.mn-connection-card__dropdown-item button[aria-label*='Supprimer la relation'], " +
-        "div.mn-connection-card__dropdown-item button[aria-label*='Supprimer']"
-      );
-      if (removeBtn) {
-        removeBtn.click();
-        await wait(500);
-        const confirmBtn = document.querySelector(
-          "button.artdeco-button--danger, button[aria-label*='Remove'], button[aria-label*='Retirer'], button[aria-label*='Supprimer']"
-        );
-        if (confirmBtn) {
-          confirmBtn.click();
-        }
-        chrome.runtime.sendMessage({ action: 'increment' });
-        await next();
-      } else {
-        await next();
-      }
-    } else {
-      await next();
-    }
+    chrome.runtime.sendMessage({ action: 'completed' });
   }
 
   process();
@@ -394,58 +393,43 @@ function postsScript(delay) {
     const posts = Array.from(document.querySelectorAll('div.feed-shared-update-v2'));
     chrome.runtime.sendMessage({ action: 'totalPosts', total: posts.length });
 
-    let i = 0;
     async function process() {
-      if (window.__liCleanerStop) {
-        chrome.runtime.sendMessage({ action: 'postsCompleted' });
-        return;
-      }
-      if (window.__liCleanerPause) {
-        setTimeout(process, 200);
-        return;
-      }
-      if (i >= posts.length) {
-        chrome.runtime.sendMessage({ action: 'postsCompleted' });
-        return;
-      }
-
-      const post = posts[i];
-      const menu = post.querySelector("button.feed-shared-control-menu__trigger.artdeco-button.artdeco-button--tertiary.artdeco-button--muted.artdeco-button--1.artdeco-button--circle");
-
-      async function next() {
-        i += 1;
+      for (let i = 0; i < posts.length && !window.__liCleanerStop; i++) {
         while (window.__liCleanerPause && !window.__liCleanerStop) {
           await wait(200);
         }
-        await wait(randomDelay());
-        process();
-      }
 
-      if (menu) {
-        menu.click();
-        await wait(500);
-        const deleteBtn = Array.from(
-          document.querySelectorAll(
-            "div.feed-shared-control-menu__dropdown-item[role='button']"
-          )
-        ).find(el => /Supprimer|Delete/i.test(el.innerText));
-        if (deleteBtn) {
-          deleteBtn.click();
+        const post = posts[i];
+        const menu = post.querySelector(
+          "button.feed-shared-control-menu__trigger.artdeco-button.artdeco-button--tertiary.artdeco-button--muted.artdeco-button--1.artdeco-button--circle"
+        );
+
+        if (menu) {
+          menu.click();
           await wait(500);
-          const confirmBtn = Array.from(
+          const deleteBtn = Array.from(
             document.querySelectorAll(
-              "button.artdeco-button--primary.artdeco-button--2"
+              "div.feed-shared-control-menu__dropdown-item[role='button']"
             )
           ).find(el => /Supprimer|Delete/i.test(el.innerText));
-          if (confirmBtn) { confirmBtn.click(); }
-          chrome.runtime.sendMessage({ action: 'incrementPosts' });
-          await next();
-        } else {
-          await next();
+          if (deleteBtn) {
+            deleteBtn.click();
+            await wait(500);
+            const confirmBtn = Array.from(
+              document.querySelectorAll(
+                "button.artdeco-button--primary.artdeco-button--2"
+              )
+            ).find(el => /Supprimer|Delete/i.test(el.innerText));
+            if (confirmBtn) { confirmBtn.click(); }
+            chrome.runtime.sendMessage({ action: 'incrementPosts' });
+          }
         }
-      } else {
-        await next();
+
+        if (window.__liCleanerStop) break;
+        await wait(randomDelay());
       }
+
+      chrome.runtime.sendMessage({ action: 'postsCompleted' });
     }
 
     process();
