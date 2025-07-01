@@ -56,6 +56,41 @@
   <div class="status">
     <span id="postCounter">0/0</span> - <span id="postState">Idle</span>
   </div>
+
+  <hr>
+  <h1>Invitations envoyées</h1>
+  <label for="sentDelay">Delay between actions</label>
+  <div class="range-wrap">
+    <input type="range" id="sentDelay" min="1" max="10" value="2">
+    <span id="sentDelayValue">2 sec</span>
+  </div>
+  <div class="controls">
+    <button id="sentStart">Start</button>
+    <button id="sentPause">Pause</button>
+    <button id="sentStop">Stop</button>
+  </div>
+  <progress id="sentProgress" value="0" max="0"></progress>
+  <div class="status">
+    <span id="sentCounter">0/0</span> - <span id="sentState">Idle</span>
+  </div>
+
+  <hr>
+  <h1>Invitations reçues</h1>
+  <label for="recvDelay">Delay between actions</label>
+  <div class="range-wrap">
+    <input type="range" id="recvDelay" min="1" max="10" value="2">
+    <span id="recvDelayValue">2 sec</span>
+  </div>
+  <div class="controls">
+    <button id="recvAccept">Accept</button>
+    <button id="recvIgnore">Ignore</button>
+    <button id="recvPause">Pause</button>
+    <button id="recvStop">Stop</button>
+  </div>
+  <progress id="recvProgress" value="0" max="0"></progress>
+  <div class="status">
+    <span id="recvAccepted">0</span> accepted / <span id="recvIgnored">0</span> ignored - <span id="recvTotal">0</span> total - <span id="recvState">Idle</span>
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>
