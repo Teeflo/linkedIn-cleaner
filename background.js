@@ -1,5 +1,7 @@
 const CONNECTIONS_PATH = 'linkedin.com/mynetwork/invite-connect/connections/';
 const POSTS_PATH = '/recent-activity/all/';
+const SENT_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/sent/';
+const RECEIVED_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/';
 
 let state = {
   status: 'idle',
@@ -17,12 +19,38 @@ let postsState = {
   delay: 2000
 };
 
+let sentInvState = {
+  status: 'idle',
+  removed: 0,
+  total: 0,
+  tabId: null,
+  delay: 1500
+};
+
+let receivedInvState = {
+  status: 'idle',
+  accepted: 0,
+  ignored: 0,
+  total: 0,
+  tabId: null,
+  delay: 1500,
+  mode: null
+};
+
 function isConnectionsPage(url) {
   return url && url.includes(CONNECTIONS_PATH);
 }
 
 function isPostsPage(url) {
   return url && /linkedin\.com\/in\/[^\/]+\/recent-activity\/all\//.test(url);
+}
+
+function isSentInvPage(url) {
+  return url && url.includes(SENT_INV_PATH);
+}
+
+function isReceivedInvPage(url) {
+  return url && url.includes(RECEIVED_INV_PATH) && !url.includes('/sent/');
 }
 
 function execScript(injection, callback) {
@@ -62,6 +90,35 @@ function stopPostsProcess() {
   postsState.tabId = null;
 }
 
+function stopSentInvProcess() {
+  if (sentInvState.tabId !== null) {
+    execScript({
+      target: { tabId: sentInvState.tabId },
+      func: () => {
+        window.__liCleanerStop = true;
+        window.__liCleanerPause = false;
+      }
+    });
+  }
+  sentInvState.status = 'stopped';
+  sentInvState.tabId = null;
+}
+
+function stopReceivedInvProcess() {
+  if (receivedInvState.tabId !== null) {
+    execScript({
+      target: { tabId: receivedInvState.tabId },
+      func: () => {
+        window.__liCleanerStop = true;
+        window.__liCleanerPause = false;
+      }
+    });
+  }
+  receivedInvState.status = 'stopped';
+  receivedInvState.tabId = null;
+  receivedInvState.mode = null;
+}
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (tabId === state.tabId && changeInfo.status === 'loading') {
     if (!isConnectionsPage(tab.url)) {
@@ -73,6 +130,16 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       stopPostsProcess();
     }
   }
+  if (tabId === sentInvState.tabId && changeInfo.status === 'loading') {
+    if (!isSentInvPage(tab.url)) {
+      stopSentInvProcess();
+    }
+  }
+  if (tabId === receivedInvState.tabId && changeInfo.status === 'loading') {
+    if (!isReceivedInvPage(tab.url)) {
+      stopReceivedInvProcess();
+    }
+  }
 });
 
 chrome.tabs.onRemoved.addListener(tabId => {
@@ -81,6 +148,12 @@ chrome.tabs.onRemoved.addListener(tabId => {
   }
   if (tabId === postsState.tabId) {
     stopPostsProcess();
+  }
+  if (tabId === sentInvState.tabId) {
+    stopSentInvProcess();
+  }
+  if (tabId === receivedInvState.tabId) {
+    stopReceivedInvProcess();
   }
 });
 
@@ -228,11 +301,120 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       });
       return true;
+    case 'startSent':
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        const tab = tabs[0];
+        if (!tab) { sendResponse(); return; }
+        const delay = message.delay || 1500;
+
+        const startSent = () => {
+          sentInvState.status = 'running';
+          sentInvState.removed = 0;
+          sentInvState.total = 0;
+          sentInvState.tabId = tab.id;
+          sentInvState.delay = delay;
+
+          execScript({
+            target: { tabId: tab.id },
+            func: () => { window.__liCleanerStop = false; window.__liCleanerPause = false; }
+          });
+
+          execScript({
+            target: { tabId: tab.id },
+            func: sentInvitationsScript,
+            args: [delay]
+          });
+        };
+
+        if (!isSentInvPage(tab.url)) {
+          execScript({
+            target: { tabId: tab.id },
+            func: () => confirm("You will be redirected to your sent invitations. After the redirection, please click 'Start' again.")
+          }, results => {
+            const proceed = results && results[0] && results[0].result;
+            if (!proceed) { sendResponse({ status: 'idle' }); return; }
+
+            sentInvState.status = 'redirecting';
+            chrome.tabs.update(tab.id, { url: 'https://www.linkedin.com/mynetwork/invitation-manager/sent/' });
+            const listener = (id, info, updatedTab) => {
+              if (id === tab.id && info.status === 'complete' && isSentInvPage(updatedTab.url)) {
+                chrome.tabs.onUpdated.removeListener(listener);
+                startSent();
+              }
+            };
+            chrome.tabs.onUpdated.addListener(listener);
+            sendResponse({ status: sentInvState.status });
+          });
+        } else {
+          startSent();
+          sendResponse({ status: sentInvState.status });
+        }
+      });
+      return true;
+    case 'startReceived':
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        const tab = tabs[0];
+        if (!tab) { sendResponse(); return; }
+        const delay = message.delay || 1500;
+        const mode = message.mode === 'ignore' ? 'ignore' : 'accept';
+
+        const startReceived = () => {
+          receivedInvState.status = 'running';
+          receivedInvState.accepted = 0;
+          receivedInvState.ignored = 0;
+          receivedInvState.total = 0;
+          receivedInvState.tabId = tab.id;
+          receivedInvState.delay = delay;
+          receivedInvState.mode = mode;
+
+          execScript({
+            target: { tabId: tab.id },
+            func: () => { window.__liCleanerStop = false; window.__liCleanerPause = false; }
+          });
+
+          execScript({
+            target: { tabId: tab.id },
+            func: receivedInvitationsScript,
+            args: [delay, mode]
+          });
+        };
+
+        if (!isReceivedInvPage(tab.url)) {
+          execScript({
+            target: { tabId: tab.id },
+            func: () => confirm("You will be redirected to your received invitations. After the redirection, please click 'Start' again.")
+          }, results => {
+            const proceed = results && results[0] && results[0].result;
+            if (!proceed) { sendResponse({ status: 'idle' }); return; }
+
+            receivedInvState.status = 'redirecting';
+            chrome.tabs.update(tab.id, { url: 'https://www.linkedin.com/mynetwork/invitation-manager/' });
+            const listener = (id, info, updatedTab) => {
+              if (id === tab.id && info.status === 'complete' && isReceivedInvPage(updatedTab.url)) {
+                chrome.tabs.onUpdated.removeListener(listener);
+                startReceived();
+              }
+            };
+            chrome.tabs.onUpdated.addListener(listener);
+            sendResponse({ status: receivedInvState.status });
+          });
+        } else {
+          startReceived();
+          sendResponse({ status: receivedInvState.status });
+        }
+      });
+      return true;
     case 'status':
       sendResponse(state);
       break;
     case 'statusPosts':
       sendResponse(postsState);
+      break;
+    case 'statusSent':
+      sendResponse(sentInvState);
+      break;
+    case 'statusReceived':
+      sendResponse(receivedInvState);
       break;
     case 'pause':
       if (state.tabId !== null) {
@@ -262,17 +444,66 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'stopPosts':
       stopPostsProcess();
       break;
+    case 'pauseSent':
+      if (sentInvState.tabId !== null) {
+        const shouldPause = sentInvState.status === 'running';
+        sentInvState.status = shouldPause ? 'paused' : 'running';
+        execScript({
+          target: { tabId: sentInvState.tabId },
+          func: p => { window.__liCleanerPause = p; },
+          args: [shouldPause]
+        });
+      }
+      break;
+    case 'pauseReceived':
+      if (receivedInvState.tabId !== null) {
+        const shouldPause = receivedInvState.status === 'running';
+        receivedInvState.status = shouldPause ? 'paused' : 'running';
+        execScript({
+          target: { tabId: receivedInvState.tabId },
+          func: p => { window.__liCleanerPause = p; },
+          args: [shouldPause]
+        });
+      }
+      break;
+    case 'sentLoading':
+      sentInvState.status = 'loading';
+      break;
+    case 'sentLoaded':
+      sentInvState.status = 'running';
+      break;
+    case 'stopSent':
+      stopSentInvProcess();
+      break;
+    case 'stopReceived':
+      stopReceivedInvProcess();
+      break;
     case 'increment':
       state.removed += 1;
       break;
     case 'incrementPosts':
       postsState.removed += 1;
       break;
+    case 'incrementSent':
+      sentInvState.removed += 1;
+      break;
+    case 'incrementAccepted':
+      receivedInvState.accepted += 1;
+      break;
+    case 'incrementIgnored':
+      receivedInvState.ignored += 1;
+      break;
     case 'total':
       state.total = message.total;
       break;
     case 'totalPosts':
       postsState.total = message.total;
+      break;
+    case 'totalSent':
+      sentInvState.total = message.total;
+      break;
+    case 'totalReceived':
+      receivedInvState.total = message.total;
       break;
     case 'completed':
       state.status = 'completed';
@@ -281,6 +512,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'postsCompleted':
       postsState.status = 'completed';
       postsState.tabId = null;
+      break;
+    case 'sentCompleted':
+      sentInvState.status = 'completed';
+      sentInvState.tabId = null;
+      break;
+    case 'receivedCompleted':
+      receivedInvState.status = 'completed';
+      receivedInvState.tabId = null;
+      receivedInvState.mode = null;
       break;
   }
 });
@@ -446,6 +686,162 @@ function postsScript(delay) {
       } else {
         await next();
       }
+    }
+
+    process();
+  }
+
+  start();
+}
+
+function sentInvitationsScript(delay) {
+  const SENT_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/sent/';
+  delay = delay || 1500;
+  if (!location.href.includes(SENT_INV_PATH)) {
+    chrome.runtime.sendMessage({ action: 'sentCompleted' });
+    return;
+  }
+
+  window.__liCleanerPause = false;
+
+  function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  function randomDelay() { return delay + Math.floor(Math.random() * 2000); }
+
+  async function loadAll() {
+    let prevCount = 0;
+    let stable = 0;
+    while (stable < 3) {
+      window.scrollTo(0, document.body.scrollHeight);
+      await wait(800);
+      const loadMore = Array.from(document.querySelectorAll('button'))
+        .find(b => /load|voir|plus|more/i.test(b.innerText));
+      if (loadMore) {
+        loadMore.click();
+        await wait(800);
+      }
+      const count = document.querySelectorAll("button[data-view-name='sent-invitations-withdraw-single']").length;
+      if (count === prevCount) {
+        stable += 1;
+      } else {
+        stable = 0;
+        prevCount = count;
+      }
+    }
+  }
+
+  async function start() {
+    chrome.runtime.sendMessage({ action: 'sentLoading' });
+    await loadAll();
+    chrome.runtime.sendMessage({ action: 'sentLoaded' });
+    const buttons = Array.from(
+      document.querySelectorAll("button[data-view-name='sent-invitations-withdraw-single']")
+    );
+    chrome.runtime.sendMessage({ action: 'totalSent', total: buttons.length });
+
+  let i = 0;
+  async function process() {
+    if (window.__liCleanerStop) {
+      chrome.runtime.sendMessage({ action: 'sentCompleted' });
+      return;
+    }
+    if (window.__liCleanerPause) { setTimeout(process, 200); return; }
+    if (i >= buttons.length) {
+      chrome.runtime.sendMessage({ action: 'sentCompleted' });
+      return;
+    }
+
+    const btn = buttons[i];
+
+    async function next() {
+      i += 1;
+      while (window.__liCleanerPause && !window.__liCleanerStop) { await wait(200); }
+      await wait(randomDelay());
+      process();
+    }
+
+    if (btn && btn.offsetParent !== null) {
+      btn.click();
+      await wait(500);
+      const confirmBtn = Array.from(document.querySelectorAll('button'))
+        .find(b => /Retirer|Withdraw|Supprimer/i.test(b.innerText));
+      if (confirmBtn) { confirmBtn.click(); }
+      chrome.runtime.sendMessage({ action: 'incrementSent' });
+      await next();
+    } else {
+      await next();
+    }
+  }
+
+    process();
+  }
+
+  start();
+}
+
+function receivedInvitationsScript(delay, mode) {
+  const RECEIVED_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/';
+  delay = delay || 1500;
+
+  function isReceivedInvPageLocal(url) {
+    return url && url.includes(RECEIVED_INV_PATH) && !url.includes('/sent/');
+  }
+
+  if (!isReceivedInvPageLocal(location.href)) {
+    chrome.runtime.sendMessage({ action: 'receivedCompleted' });
+    return;
+  }
+
+  window.__liCleanerPause = false;
+
+  function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+  function randomDelay() { return delay + Math.floor(Math.random() * 2000); }
+
+  async function loadAll() {
+    let prev = 0;
+    let stable = 0;
+    while (stable < 3) {
+      window.scrollTo(0, document.body.scrollHeight);
+      await wait(800);
+      const loadMore = Array.from(document.querySelectorAll('button'))
+        .find(b => /load|voir|plus|more/i.test(b.innerText));
+      if (loadMore) {
+        loadMore.click();
+        await wait(800);
+      }
+      const count = document.querySelectorAll('button[data-view-name="invitation-action"]').length;
+      if (count === prev) {
+        stable += 1;
+      } else {
+        stable = 0;
+        prev = count;
+      }
+    }
+  }
+
+  const getButtons = () => Array.from(document.querySelectorAll('button[data-view-name="invitation-action"]'))
+    .filter(b => mode === 'accept' ? /Accepter|Accept/i.test(b.innerText) : /Ignorer|Ignore/i.test(b.innerText));
+
+  async function start() {
+    await loadAll();
+    chrome.runtime.sendMessage({ action: 'totalReceived', total: getButtons().length });
+
+    async function process() {
+      if (window.__liCleanerStop) {
+        chrome.runtime.sendMessage({ action: 'receivedCompleted' });
+        return;
+      }
+      if (window.__liCleanerPause) { setTimeout(process, 200); return; }
+
+      const btn = getButtons()[0];
+      if (!btn) {
+        chrome.runtime.sendMessage({ action: 'receivedCompleted' });
+        return;
+      }
+
+      btn.click();
+      chrome.runtime.sendMessage({ action: mode === 'accept' ? 'incrementAccepted' : 'incrementIgnored' });
+      await wait(randomDelay());
+      process();
     }
 
     process();

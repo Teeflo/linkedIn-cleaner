@@ -13,9 +13,9 @@
     #delayValue { min-width:40px; text-align:right; }
     .controls { display:flex; justify-content:space-between; margin-bottom:10px; }
     button { flex:1; margin:0 2px; padding:8px; border:none; border-radius:4px; color:#fff; font-size:14px; cursor:pointer; }
-    #start, #postStart { background:#28a745; }
-    #pause, #postPause { background:#ffc107; }
-    #stop, #postStop { background:#dc3545; }
+    #start, #postStart, #sentStart, #recvAccept { background:#28a745; }
+    #pause, #postPause, #sentPause, #recvPause { background:#ffc107; }
+    #stop, #postStop, #sentStop, #recvStop, #recvIgnore { background:#dc3545; }
     #close { position:absolute; top:5px; right:5px; border:none; background:none; font-size:16px; cursor:pointer; color:#999; }
     #close:hover { color:#333; }
     progress { width:100%; height:18px; margin-top:5px; }
@@ -55,6 +55,41 @@
   <progress id="postProgress" value="0" max="0"></progress>
   <div class="status">
     <span id="postCounter">0/0</span> - <span id="postState">Idle</span>
+  </div>
+
+  <hr>
+  <h1>Invitations envoyées</h1>
+  <label for="sentDelay">Delay between actions</label>
+  <div class="range-wrap">
+    <input type="range" id="sentDelay" min="1" max="10" value="2">
+    <span id="sentDelayValue">2 sec</span>
+  </div>
+  <div class="controls">
+    <button id="sentStart">Start</button>
+    <button id="sentPause">Pause</button>
+    <button id="sentStop">Stop</button>
+  </div>
+  <progress id="sentProgress" value="0" max="0"></progress>
+  <div class="status">
+    <span id="sentCounter">0/0</span> - <span id="sentState">Idle</span>
+  </div>
+
+  <hr>
+  <h1>Invitations reçues</h1>
+  <label for="recvDelay">Delay between actions</label>
+  <div class="range-wrap">
+    <input type="range" id="recvDelay" min="1" max="10" value="2">
+    <span id="recvDelayValue">2 sec</span>
+  </div>
+  <div class="controls">
+    <button id="recvAccept">Accept</button>
+    <button id="recvIgnore">Ignore</button>
+    <button id="recvPause">Pause</button>
+    <button id="recvStop">Stop</button>
+  </div>
+  <progress id="recvProgress" value="0" max="0"></progress>
+  <div class="status">
+    <span id="recvAccepted">0</span> accepted / <span id="recvIgnored">0</span> ignored - <span id="recvTotal">0</span> total - <span id="recvState">Idle</span>
   </div>
   <script src="popup.js"></script>
 </body>
