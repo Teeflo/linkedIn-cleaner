@@ -9,8 +9,15 @@
 <body>
   <button id="close" aria-label="Close">&times;</button>
   <h1>LinkedIn Cleaner</h1>
+  <select id="modeSelect">
+    <option value="" selected>Choose a mode...</option>
+    <option value="connections">Connections</option>
+    <option value="posts">Delete My Posts</option>
+    <option value="sent">Sent Invitations</option>
+    <option value="received">Received Invitations</option>
+  </select>
 
-  <section id="connections">
+  <section id="connections" class="mode-section hidden">
     <h2>Connections</h2>
     <label for="delay">Delay between removals</label>
     <div class="range-wrap">
@@ -28,7 +35,7 @@
     </div>
   </section>
 
-  <section id="posts">
+  <section id="posts" class="mode-section hidden">
     <h2>Delete My Posts</h2>
     <label for="postDelay">Delay between deletions</label>
     <div class="range-wrap">
@@ -46,7 +53,7 @@
     </div>
   </section>
 
-  <section id="sent">
+  <section id="sent" class="mode-section hidden">
     <h2>Sent Invitations</h2>
     <label for="sentDelay">Delay between actions</label>
     <div class="range-wrap">
@@ -64,7 +71,7 @@
     </div>
   </section>
 
-  <section id="received">
+  <section id="received" class="mode-section hidden">
     <h2>Received Invitations</h2>
     <label for="recvDelay">Delay between actions</label>
     <div class="range-wrap">

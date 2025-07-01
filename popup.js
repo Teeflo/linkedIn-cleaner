@@ -37,6 +37,27 @@ const recvProgress = document.getElementById('recvProgress');
 const recvDelayInput = document.getElementById('recvDelay');
 const recvDelayValue = document.getElementById('recvDelayValue');
 
+const modeSelect = document.getElementById('modeSelect');
+const sections = {
+  connections: document.getElementById('connections'),
+  posts: document.getElementById('posts'),
+  sent: document.getElementById('sent'),
+  received: document.getElementById('received')
+};
+
+function showSection(id) {
+  Object.values(sections).forEach(sec => {
+    if (!id || sec.id !== id) {
+      sec.classList.add('hidden');
+    } else {
+      sec.classList.remove('hidden');
+    }
+  });
+}
+
+showSection('');
+modeSelect.addEventListener('change', () => showSection(modeSelect.value));
+
 function updateDelayDisplay() {
   delayValue.textContent = `${delayInput.value} sec`;
 }
