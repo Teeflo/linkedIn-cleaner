@@ -56,11 +56,32 @@ function showSection(id) {
   });
 }
 
-chrome.storage.local.get('selectedMode', data => {
-  const stored = data.selectedMode || '';
-  modeSelect.value = stored;
-  showSection(stored);
-});
+chrome.storage.local.get(
+  ['selectedMode', 'connectionsState', 'postsState', 'sentInvState', 'receivedInvState'],
+  data => {
+    const stored = data.selectedMode || '';
+    modeSelect.value = stored;
+    showSection(stored);
+
+    if (data.connectionsState && typeof data.connectionsState.delay === 'number') {
+      delayInput.value = data.connectionsState.delay / 1000;
+    }
+    if (data.postsState && typeof data.postsState.delay === 'number') {
+      postDelayInput.value = data.postsState.delay / 1000;
+    }
+    if (data.sentInvState && typeof data.sentInvState.delay === 'number') {
+      sentDelayInput.value = data.sentInvState.delay / 1000;
+    }
+    if (data.receivedInvState && typeof data.receivedInvState.delay === 'number') {
+      recvDelayInput.value = data.receivedInvState.delay / 1000;
+    }
+
+    updateDelayDisplay();
+    updatePostDelayDisplay();
+    updateSentDelayDisplay();
+    updateRecvDelayDisplay();
+  }
+);
 
 modeSelect.addEventListener('change', () => {
   const value = modeSelect.value;
