@@ -781,9 +781,11 @@ function sentInvitationsScript(delay) {
 function receivedInvitationsScript(delay, mode) {
   const RECEIVED_INV_PATH = 'linkedin.com/mynetwork/invitation-manager/';
   delay = delay || 1500;
+
   function isReceivedInvPageLocal(url) {
     return url && url.includes(RECEIVED_INV_PATH) && !url.includes('/sent/');
   }
+
   if (!isReceivedInvPageLocal(location.href)) {
     chrome.runtime.sendMessage({ action: 'receivedCompleted' });
     return;
@@ -794,45 +796,56 @@ function receivedInvitationsScript(delay, mode) {
   function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
   function randomDelay() { return delay + Math.floor(Math.random() * 2000); }
 
-  const cards = Array.from(document.querySelectorAll('li.invitation-card'));
-  chrome.runtime.sendMessage({ action: 'totalReceived', total: cards.length });
-
-  let i = 0;
-  async function process() {
-    if (window.__liCleanerStop) {
-      chrome.runtime.sendMessage({ action: 'receivedCompleted' });
-      return;
+  async function loadAll() {
+    let prev = 0;
+    let stable = 0;
+    while (stable < 3) {
+      window.scrollTo(0, document.body.scrollHeight);
+      await wait(800);
+      const loadMore = Array.from(document.querySelectorAll('button'))
+        .find(b => /load|voir|plus|more/i.test(b.innerText));
+      if (loadMore) {
+        loadMore.click();
+        await wait(800);
+      }
+      const count = document.querySelectorAll('button[data-view-name="invitation-action"]').length;
+      if (count === prev) {
+        stable += 1;
+      } else {
+        stable = 0;
+        prev = count;
+      }
     }
-    if (window.__liCleanerPause) { setTimeout(process, 200); return; }
-    if (i >= cards.length) {
-      chrome.runtime.sendMessage({ action: 'receivedCompleted' });
-      return;
-    }
+  }
 
-    const card = cards[i];
-    const btn = Array.from(card.querySelectorAll('button')).find(b => {
-      return mode === 'accept' ? /Accepter|Accept/i.test(b.innerText) : /Ignorer|Ignore/i.test(b.innerText);
-    });
+  const getButtons = () => Array.from(document.querySelectorAll('button[data-view-name="invitation-action"]'))
+    .filter(b => mode === 'accept' ? /Accepter|Accept/i.test(b.innerText) : /Ignorer|Ignore/i.test(b.innerText));
 
-    async function next() {
-      i += 1;
-      while (window.__liCleanerPause && !window.__liCleanerStop) { await wait(200); }
+  async function start() {
+    await loadAll();
+    chrome.runtime.sendMessage({ action: 'totalReceived', total: getButtons().length });
+
+    async function process() {
+      if (window.__liCleanerStop) {
+        chrome.runtime.sendMessage({ action: 'receivedCompleted' });
+        return;
+      }
+      if (window.__liCleanerPause) { setTimeout(process, 200); return; }
+
+      const btn = getButtons()[0];
+      if (!btn) {
+        chrome.runtime.sendMessage({ action: 'receivedCompleted' });
+        return;
+      }
+
+      btn.click();
+      chrome.runtime.sendMessage({ action: mode === 'accept' ? 'incrementAccepted' : 'incrementIgnored' });
       await wait(randomDelay());
       process();
     }
 
-    if (btn) {
-      btn.click();
-      await wait(500);
-      const confirmBtn = Array.from(document.querySelectorAll('button'))
-        .find(b => /Retirer|Remove|Supprimer/i.test(b.innerText));
-      if (confirmBtn) { confirmBtn.click(); }
-      chrome.runtime.sendMessage({ action: mode === 'accept' ? 'incrementAccepted' : 'incrementIgnored' });
-      await next();
-    } else {
-      await next();
-    }
+    process();
   }
 
-  process();
+  start();
 }
