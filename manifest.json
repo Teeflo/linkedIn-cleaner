@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LinkedIn Cleaner",
   "description": "Take back control of your professional network with a single click.",
-  "version": "1.0",
+  "version": "1.0.1",
   "permissions": ["activeTab", "scripting", "tabs", "storage"],
   "host_permissions": [
     "https://www.linkedin.com/mynetwork/invite-connect/connections/*",

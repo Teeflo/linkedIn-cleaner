@@ -1,9 +1,0 @@
-- name: Upload to Chrome Web Store
-  uses: mobilefirstllc/cws-publish@latest
-  with:
-    action: 'upload'  # one of: upload, publish, testers
-    client_id: ${{ 993464563511-8ep955beucn73k5m859rf8r2g7fgnupf.apps.googleusercontent.com }}
-    client_secret: ${{ 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 }}
-    refresh_token: ${{ 1//03mbZLZa8GIPkCgYIARAAGAMSNwF-L9IraTTne6g63N9GOEHcgzokIVoAd6MRbHuJCx1ioav8ZR4BlSSiBrbhl6KljF3TlLtDa-M }}
-    extension_id: 'leaeklepgoiehjffeeoajaegpldpjenm' 
-    zip_file: 'linkedin.zip'
