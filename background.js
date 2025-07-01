@@ -727,6 +727,10 @@ function sentInvitationsScript(delay) {
 
     if (btn && btn.offsetParent !== null) {
       btn.click();
+      await wait(500);
+      const confirmBtn = Array.from(document.querySelectorAll('button'))
+        .find(b => /Retirer|Withdraw|Supprimer/i.test(b.innerText));
+      if (confirmBtn) { confirmBtn.click(); }
       chrome.runtime.sendMessage({ action: 'incrementSent' });
       await next();
     } else {
@@ -782,6 +786,10 @@ function receivedInvitationsScript(delay, mode) {
 
     if (btn) {
       btn.click();
+      await wait(500);
+      const confirmBtn = Array.from(document.querySelectorAll('button'))
+        .find(b => /Retirer|Remove|Supprimer/i.test(b.innerText));
+      if (confirmBtn) { confirmBtn.click(); }
       chrome.runtime.sendMessage({ action: mode === 'accept' ? 'incrementAccepted' : 'incrementIgnored' });
       await next();
     } else {
