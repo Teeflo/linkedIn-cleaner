@@ -38,6 +38,7 @@ const recvDelayInput = document.getElementById('recvDelay');
 const recvDelayValue = document.getElementById('recvDelayValue');
 
 const modeSelect = document.getElementById('modeSelect');
+const resetStateBtn = document.getElementById('resetState');
 const sections = {
   connections: document.getElementById('connections'),
   posts: document.getElementById('posts'),
@@ -55,8 +56,24 @@ function showSection(id) {
   });
 }
 
-showSection('');
-modeSelect.addEventListener('change', () => showSection(modeSelect.value));
+chrome.storage.local.get('selectedMode', data => {
+  const stored = data.selectedMode || '';
+  modeSelect.value = stored;
+  showSection(stored);
+});
+
+modeSelect.addEventListener('change', () => {
+  const value = modeSelect.value;
+  chrome.storage.local.set({ selectedMode: value });
+  showSection(value);
+});
+
+resetStateBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'resetState' });
+  chrome.storage.local.remove('selectedMode');
+  modeSelect.value = '';
+  showSection('');
+});
 
 function updateDelayDisplay() {
   delayValue.textContent = `${delayInput.value} sec`;
