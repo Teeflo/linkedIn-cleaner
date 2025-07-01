@@ -1,0 +1,126 @@
+:root {
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --primary-color: #0A66C2;
+  --success-color: #28a745;
+  --warning-color: #f0ad4e;
+  --danger-color: #dc3545;
+  --radius: 6px;
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1d2228;
+    --text-color: #e1e1e1;
+  }
+}
+
+body {
+  font-family: var(--font-family);
+  width: 320px;
+  padding: 16px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  position: relative;
+}
+
+h1 {
+  font-size: 18px;
+  color: var(--primary-color);
+  text-align: center;
+  margin: 0 0 10px;
+}
+
+section {
+  margin-bottom: 18px;
+}
+
+label {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#delayValue,
+#postDelayValue,
+#sentDelayValue,
+#recvDelayValue {
+  min-width: 40px;
+  text-align: right;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+button {
+  flex: 1;
+  margin: 0 2px;
+  padding: 8px;
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+button.warning {
+  color: #000;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button.icon::before {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.start::before { content: '▶'; }
+.pause::before { content: '⏸'; }
+.stop::before { content: '⏹'; }
+.accept::before { content: '✔'; }
+.ignore::before { content: '✖'; }
+
+.success { background: var(--success-color); }
+.warning { background: var(--warning-color); }
+.danger { background: var(--danger-color); }
+
+#close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #999;
+}
+
+#close:hover {
+  color: var(--text-color);
+}
+
+progress {
+  width: 100%;
+  height: 18px;
+  margin-top: 5px;
+}
+
+.status {
+  text-align: center;
+  margin-top: 5px;
+  font-size: 14px;
+}

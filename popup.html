@@ -3,94 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Automatic LinkedIn Connection Removal</title>
-  <style>
-    body { font-family: Arial, sans-serif; width: 300px; padding: 15px; background:#ffffff; color:#333; position:relative; }
-    h1 { font-size:18px; color:#0073b1; text-align:center; margin-top:0; }
-    label { font-size:14px; display:block; margin-bottom:4px; }
-    select, input[type=range] { width:100%; padding:5px; margin-bottom:10px; }
-    .range-wrap { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-    #delayValue { min-width:40px; text-align:right; }
-    .controls { display:flex; justify-content:space-between; margin-bottom:10px; }
-    button { flex:1; margin:0 2px; padding:8px; border:none; border-radius:4px; color:#fff; font-size:14px; cursor:pointer; }
-    #start, #postStart, #sentStart, #recvAccept { background:#28a745; }
-    #pause, #postPause, #sentPause, #recvPause { background:#ffc107; }
-    #stop, #postStop, #sentStop, #recvStop, #recvIgnore { background:#dc3545; }
-    #close { position:absolute; top:5px; right:5px; border:none; background:none; font-size:16px; cursor:pointer; color:#999; }
-    #close:hover { color:#333; }
-    progress { width:100%; height:18px; margin-top:5px; }
-    .status { text-align:center; margin-top:5px; font-size:14px; }
-  </style>
+  <title>LinkedIn Cleaner</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <button id="close">&times;</button>
-  <h1>Automatic LinkedIn Connection Removal</h1>
-  <label for="delay">Delay between removals</label>
-  <div class="range-wrap">
-    <input type="range" id="delay" min="1" max="60" value="2">
-    <span id="delayValue">2 sec</span>
-  </div>
-  <div class="controls">
-    <button id="start">Start</button>
-    <button id="pause">Pause</button>
-    <button id="stop">Stop</button>
-  </div>
-  <progress id="progress" value="0" max="0"></progress>
-  <div class="status">
-    <span id="counter">0/0</span> - <span id="state">Idle</span>
-  </div>
+  <button id="close" aria-label="Close">&times;</button>
+  <h1>LinkedIn Cleaner</h1>
 
-  <hr>
-  <h1>Delete My Posts</h1>
-  <label for="postDelay">Delay between deletions</label>
-  <div class="range-wrap">
-    <input type="range" id="postDelay" min="1" max="60" value="3">
-    <span id="postDelayValue">3 sec</span>
-  </div>
-  <div class="controls">
-    <button id="postStart">Start</button>
-    <button id="postPause">Pause</button>
-    <button id="postStop">Stop</button>
-  </div>
-  <progress id="postProgress" value="0" max="0"></progress>
-  <div class="status">
-    <span id="postCounter">0/0</span> - <span id="postState">Idle</span>
-  </div>
+  <section id="connections">
+    <h2>Connections</h2>
+    <label for="delay">Delay between removals</label>
+    <div class="range-wrap">
+      <input type="range" id="delay" min="1" max="60" value="2">
+      <span id="delayValue">2 sec</span>
+    </div>
+    <div class="controls">
+      <button id="start" class="success start icon">Start</button>
+      <button id="pause" class="warning pause icon">Pause</button>
+      <button id="stop" class="danger stop icon">Stop</button>
+    </div>
+    <progress id="progress" value="0" max="0"></progress>
+    <div class="status">
+      <span id="counter">0/0</span> - <span id="state">Idle</span>
+    </div>
+  </section>
 
-  <hr>
-  <h1>Invitations envoyées</h1>
-  <label for="sentDelay">Delay between actions</label>
-  <div class="range-wrap">
-    <input type="range" id="sentDelay" min="1" max="10" value="2">
-    <span id="sentDelayValue">2 sec</span>
-  </div>
-  <div class="controls">
-    <button id="sentStart">Start</button>
-    <button id="sentPause">Pause</button>
-    <button id="sentStop">Stop</button>
-  </div>
-  <progress id="sentProgress" value="0" max="0"></progress>
-  <div class="status">
-    <span id="sentCounter">0/0</span> - <span id="sentState">Idle</span>
-  </div>
+  <section id="posts">
+    <h2>Delete My Posts</h2>
+    <label for="postDelay">Delay between deletions</label>
+    <div class="range-wrap">
+      <input type="range" id="postDelay" min="1" max="60" value="3">
+      <span id="postDelayValue">3 sec</span>
+    </div>
+    <div class="controls">
+      <button id="postStart" class="success start icon">Start</button>
+      <button id="postPause" class="warning pause icon">Pause</button>
+      <button id="postStop" class="danger stop icon">Stop</button>
+    </div>
+    <progress id="postProgress" value="0" max="0"></progress>
+    <div class="status">
+      <span id="postCounter">0/0</span> - <span id="postState">Idle</span>
+    </div>
+  </section>
 
-  <hr>
-  <h1>Invitations reçues</h1>
-  <label for="recvDelay">Delay between actions</label>
-  <div class="range-wrap">
-    <input type="range" id="recvDelay" min="1" max="10" value="2">
-    <span id="recvDelayValue">2 sec</span>
-  </div>
-  <div class="controls">
-    <button id="recvAccept">Accept</button>
-    <button id="recvIgnore">Ignore</button>
-    <button id="recvPause">Pause</button>
-    <button id="recvStop">Stop</button>
-  </div>
-  <progress id="recvProgress" value="0" max="0"></progress>
-  <div class="status">
-    <span id="recvAccepted">0</span> accepted / <span id="recvIgnored">0</span> ignored - <span id="recvTotal">0</span> total - <span id="recvState">Idle</span>
-  </div>
+  <section id="sent">
+    <h2>Sent Invitations</h2>
+    <label for="sentDelay">Delay between actions</label>
+    <div class="range-wrap">
+      <input type="range" id="sentDelay" min="1" max="10" value="2">
+      <span id="sentDelayValue">2 sec</span>
+    </div>
+    <div class="controls">
+      <button id="sentStart" class="success start icon">Start</button>
+      <button id="sentPause" class="warning pause icon">Pause</button>
+      <button id="sentStop" class="danger stop icon">Stop</button>
+    </div>
+    <progress id="sentProgress" value="0" max="0"></progress>
+    <div class="status">
+      <span id="sentCounter">0/0</span> - <span id="sentState">Idle</span>
+    </div>
+  </section>
+
+  <section id="received">
+    <h2>Received Invitations</h2>
+    <label for="recvDelay">Delay between actions</label>
+    <div class="range-wrap">
+      <input type="range" id="recvDelay" min="1" max="10" value="2">
+      <span id="recvDelayValue">2 sec</span>
+    </div>
+    <div class="controls">
+      <button id="recvAccept" class="success accept icon">Accept</button>
+      <button id="recvIgnore" class="danger ignore icon">Ignore</button>
+      <button id="recvPause" class="warning pause icon">Pause</button>
+      <button id="recvStop" class="danger stop icon">Stop</button>
+    </div>
+    <progress id="recvProgress" value="0" max="0"></progress>
+    <div class="status">
+      <span id="recvAccepted">0</span> accepted / <span id="recvIgnored">0</span> ignored - <span id="recvTotal">0</span> total - <span id="recvState">Idle</span>
+    </div>
+  </section>
+
   <script src="popup.js"></script>
 </body>
 </html>
