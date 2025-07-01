@@ -3,7 +3,7 @@
   "name": "LinkedIn Cleaner",
   "description": "Take back control of your professional network with a single click.",
   "version": "1.0",
-  "permissions": ["activeTab", "scripting", "tabs"],
+  "permissions": ["activeTab", "scripting", "tabs", "storage"],
   "host_permissions": [
     "https://www.linkedin.com/mynetwork/invite-connect/connections/*",
     "https://www.linkedin.com/in/*/recent-activity/all/*"

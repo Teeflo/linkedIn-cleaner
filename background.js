@@ -118,13 +118,14 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
   }
 
-  if (changeInfo.status === 'complete') {
+  if (changeInfo.status === 'complete' || changeInfo.url) {
+    const url = changeInfo.url || tab.url;
     chrome.storage.session.get(['connectionRedirect', 'postsRedirect'], data => {
-      if (data.connectionRedirect && tabId === data.connectionRedirect.tabId && isConnectionsPage(tab.url)) {
+      if (data.connectionRedirect && tabId === data.connectionRedirect.tabId && isConnectionsPage(url)) {
         chrome.storage.session.remove('connectionRedirect');
         startConnectionsCleanup(tabId, data.connectionRedirect.delay);
       }
-      if (data.postsRedirect && tabId === data.postsRedirect.tabId && isPostsPage(tab.url)) {
+      if (data.postsRedirect && tabId === data.postsRedirect.tabId && isPostsPage(url)) {
         chrome.storage.session.remove('postsRedirect');
         startPostsCleanup(tabId, data.postsRedirect.delay);
       }
