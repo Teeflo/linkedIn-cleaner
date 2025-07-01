@@ -702,16 +702,23 @@ function sentInvitationsScript(delay) {
   function randomDelay() { return delay + Math.floor(Math.random() * 2000); }
 
   async function loadAll() {
-    let prevHeight = 0;
+    let prevCount = 0;
     let stable = 0;
     while (stable < 3) {
       window.scrollTo(0, document.body.scrollHeight);
-      await wait(1000);
-      if (document.body.scrollHeight === prevHeight) {
+      await wait(800);
+      const loadMore = Array.from(document.querySelectorAll('button'))
+        .find(b => /load|voir|plus|more/i.test(b.innerText));
+      if (loadMore) {
+        loadMore.click();
+        await wait(800);
+      }
+      const count = document.querySelectorAll("button[data-view-name='sent-invitations-withdraw-single']").length;
+      if (count === prevCount) {
         stable += 1;
       } else {
         stable = 0;
-        prevHeight = document.body.scrollHeight;
+        prevCount = count;
       }
     }
   }
