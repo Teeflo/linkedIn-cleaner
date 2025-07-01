@@ -466,6 +466,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       }
       break;
+    case 'sentLoading':
+      sentInvState.status = 'loading';
+      break;
+    case 'sentLoaded':
+      sentInvState.status = 'running';
+      break;
     case 'stopSent':
       stopSentInvProcess();
       break;
@@ -724,7 +730,9 @@ function sentInvitationsScript(delay) {
   }
 
   async function start() {
+    chrome.runtime.sendMessage({ action: 'sentLoading' });
     await loadAll();
+    chrome.runtime.sendMessage({ action: 'sentLoaded' });
     const buttons = Array.from(
       document.querySelectorAll("button[data-view-name='sent-invitations-withdraw-single']")
     );

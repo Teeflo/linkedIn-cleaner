@@ -132,6 +132,7 @@ function translate(status) {
     case 'completed': return 'Completed';
     case 'stopped': return 'Stopped';
     case 'redirecting': return 'Redirecting...';
+    case 'loading': return 'Loading...';
     default: return 'Idle';
   }
 }
