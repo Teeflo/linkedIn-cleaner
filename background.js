@@ -701,8 +701,27 @@ function sentInvitationsScript(delay) {
   function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
   function randomDelay() { return delay + Math.floor(Math.random() * 2000); }
 
-  const buttons = Array.from(document.querySelectorAll("button[data-view-name='sent-invitations-withdraw-single']"));
-  chrome.runtime.sendMessage({ action: 'totalSent', total: buttons.length });
+  async function loadAll() {
+    let prevHeight = 0;
+    let stable = 0;
+    while (stable < 3) {
+      window.scrollTo(0, document.body.scrollHeight);
+      await wait(1000);
+      if (document.body.scrollHeight === prevHeight) {
+        stable += 1;
+      } else {
+        stable = 0;
+        prevHeight = document.body.scrollHeight;
+      }
+    }
+  }
+
+  async function start() {
+    await loadAll();
+    const buttons = Array.from(
+      document.querySelectorAll("button[data-view-name='sent-invitations-withdraw-single']")
+    );
+    chrome.runtime.sendMessage({ action: 'totalSent', total: buttons.length });
 
   let i = 0;
   async function process() {
@@ -738,7 +757,10 @@ function sentInvitationsScript(delay) {
     }
   }
 
-  process();
+    process();
+  }
+
+  start();
 }
 
 function receivedInvitationsScript(delay, mode) {
