@@ -1,0 +1,2 @@
+- name: Chrome Extension Action
+  uses: mikeyaworski/chrome-addon@v1
