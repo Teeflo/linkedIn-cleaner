@@ -37,16 +37,34 @@ const recvProgress = document.getElementById('recvProgress');
 const recvDelayInput = document.getElementById('recvDelay');
 const recvDelayValue = document.getElementById('recvDelayValue');
 
+const msgStartBtn = document.getElementById('msgStart');
+const msgPauseBtn = document.getElementById('msgPause');
+const msgStopBtn = document.getElementById('msgStop');
+const msgCounter = document.getElementById('msgCounter');
+const msgStateSpan = document.getElementById('msgState');
+const msgProgress = document.getElementById('msgProgress');
+const msgDelayInput = document.getElementById('msgDelay');
+const msgDelayValue = document.getElementById('msgDelayValue');
+
 const modeSelect = document.getElementById('modeSelect');
 const resetStateBtn = document.getElementById('resetState');
 const sections = {
   connections: document.getElementById('connections'),
   posts: document.getElementById('posts'),
   sent: document.getElementById('sent'),
-  received: document.getElementById('received')
+  received: document.getElementById('received'),
+  messages: document.getElementById('messages')
 };
 
+const initialState = document.getElementById('initial-state');
+
 function showSection(id) {
+  if (!id) {
+    if (initialState) initialState.style.display = 'block';
+  } else {
+    if (initialState) initialState.style.display = 'none';
+  }
+
   Object.values(sections).forEach(sec => {
     if (!id || sec.id !== id) {
       sec.classList.add('hidden');
@@ -57,7 +75,7 @@ function showSection(id) {
 }
 
 chrome.storage.local.get(
-  ['selectedMode', 'connectionsState', 'postsState', 'sentInvState', 'receivedInvState'],
+  ['selectedMode', 'connectionsState', 'postsState', 'sentInvState', 'receivedInvState', 'messagesState'],
   data => {
     const stored = data.selectedMode || '';
     modeSelect.value = stored;
@@ -75,11 +93,15 @@ chrome.storage.local.get(
     if (data.receivedInvState && typeof data.receivedInvState.delay === 'number') {
       recvDelayInput.value = data.receivedInvState.delay / 1000;
     }
+    if (data.messagesState && typeof data.messagesState.delay === 'number') {
+      msgDelayInput.value = data.messagesState.delay / 1000;
+    }
 
     updateDelayDisplay();
     updatePostDelayDisplay();
     updateSentDelayDisplay();
     updateRecvDelayDisplay();
+    updateMsgDelayDisplay();
   }
 );
 
@@ -99,31 +121,29 @@ resetStateBtn.addEventListener('click', () => {
 function updateDelayDisplay() {
   delayValue.textContent = `${delayInput.value} sec`;
 }
-
-updateDelayDisplay();
-
 delayInput.addEventListener('input', updateDelayDisplay);
 
 function updatePostDelayDisplay() {
   postDelayValue.textContent = `${postDelayInput.value} sec`;
 }
-
-updatePostDelayDisplay();
 postDelayInput.addEventListener('input', updatePostDelayDisplay);
 
 function updateSentDelayDisplay() {
   sentDelayValue.textContent = `${sentDelayInput.value} sec`;
 }
-
-updateSentDelayDisplay();
 sentDelayInput.addEventListener('input', updateSentDelayDisplay);
 
 function updateRecvDelayDisplay() {
   recvDelayValue.textContent = `${recvDelayInput.value} sec`;
 }
-
-updateRecvDelayDisplay();
 recvDelayInput.addEventListener('input', updateRecvDelayDisplay);
+
+function updateMsgDelayDisplay() {
+  msgDelayValue.textContent = `${msgDelayInput.value} sec`;
+}
+msgDelayInput.addEventListener('input', updateMsgDelayDisplay);
+
+// --- Event Listeners ---
 
 startBtn.addEventListener('click', () => {
   const delayMs = parseInt(delayInput.value, 10) * 1000;
@@ -182,6 +202,19 @@ recvStopBtn.addEventListener('click', () => {
   chrome.runtime.sendMessage({ action: 'stopReceived' });
 });
 
+msgStartBtn.addEventListener('click', () => {
+  const delayMs = parseInt(msgDelayInput.value, 10) * 1000;
+  chrome.runtime.sendMessage({ action: 'startMessages', delay: delayMs }, updateMsgState);
+});
+
+msgPauseBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'pauseMessages' });
+});
+
+msgStopBtn.addEventListener('click', () => {
+  chrome.runtime.sendMessage({ action: 'stopMessages' });
+});
+
 document.getElementById('close').addEventListener('click', () => window.close());
 
 function translate(status) {
@@ -209,6 +242,11 @@ function updateSentState(res) {
 function updateRecvState(res) {
   if (!res) return;
   if (res.status) recvStateSpan.textContent = translate(res.status);
+}
+
+function updateMsgState(res) {
+  if (!res) return;
+  if (res.status) msgStateSpan.textContent = translate(res.status);
 }
 
 function updateState(res) {
@@ -253,6 +291,15 @@ function refreshStatus() {
       recvProgress.value = (rState.accepted + rState.ignored) || 0;
       recvStateSpan.textContent = translate(rState.status);
       recvPauseBtn.textContent = rState.status === 'paused' ? 'Resume' : 'Pause';
+    }
+  });
+  chrome.runtime.sendMessage({ action: 'statusMessages' }, mState => {
+    if (mState) {
+      msgCounter.textContent = `${mState.removed}/${mState.total}`;
+      msgProgress.max = mState.total || 0;
+      msgProgress.value = mState.removed || 0;
+      msgStateSpan.textContent = translate(mState.status);
+      msgPauseBtn.textContent = mState.status === 'paused' ? 'Resume' : 'Pause';
     }
   });
 }

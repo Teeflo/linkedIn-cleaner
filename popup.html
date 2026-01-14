@@ -2,96 +2,228 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LinkedIn Cleaner</title>
   <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <button id="close" aria-label="Close">&times;</button>
-  <h1>LinkedIn Cleaner</h1>
-  <select id="modeSelect">
-    <option value="" selected>Choose a mode...</option>
-    <option value="connections">Connections</option>
-    <option value="posts">Delete My Posts</option>
-    <option value="sent">Sent Invitations</option>
-    <option value="received">Received Invitations</option>
-  </select>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <img src="icons/icon32.png" alt="LinkedIn Cleaner Logo" class="logo-icon">
+        <h1>LinkedIn Cleaner</h1>
+      </div>
+      <button id="close" class="icon-btn" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </header>
 
-  <section id="connections" class="mode-section hidden">
-    <h2>Connections</h2>
-    <label for="delay">Delay between removals</label>
-    <div class="range-wrap">
-      <input type="range" id="delay" min="1" max="60" value="2">
-      <span id="delayValue">2 sec</span>
-    </div>
-    <div class="controls">
-      <button id="start" class="success start icon">Start</button>
-      <button id="pause" class="warning pause icon">Pause</button>
-      <button id="stop" class="danger stop icon">Stop</button>
-    </div>
-    <progress id="progress" value="0" max="0"></progress>
-    <div class="status">
-      <span id="counter">0/0</span> - <span id="state">Idle</span>
-    </div>
-  </section>
+    <main>
+      <div class="mode-selector">
+        <label for="modeSelect" class="sr-only">Select Mode</label>
+        <div class="select-wrapper">
+          <select id="modeSelect">
+            <option value="" disabled selected>Select an action...</option>
+            <option value="connections">Remove Connections</option>
+            <option value="posts">Delete My Posts</option>
+            <option value="sent">Withdraw Sent Invites</option>
+            <option value="received">Manage Received Invites</option>
+            <option value="messages">Delete Conversations</option>
+          </select>
+          <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+      </div>
 
-  <section id="posts" class="mode-section hidden">
-    <h2>Delete My Posts</h2>
-    <label for="postDelay">Delay between deletions</label>
-    <div class="range-wrap">
-      <input type="range" id="postDelay" min="1" max="60" value="3">
-      <span id="postDelayValue">3 sec</span>
-    </div>
-    <div class="controls">
-      <button id="postStart" class="success start icon">Start</button>
-      <button id="postPause" class="warning pause icon">Pause</button>
-      <button id="postStop" class="danger stop icon">Stop</button>
-    </div>
-    <progress id="postProgress" value="0" max="0"></progress>
-    <div class="status">
-      <span id="postCounter">0/0</span> - <span id="postState">Idle</span>
-    </div>
-  </section>
+      <div id="content-area">
+        <!-- Placeholder for initial state -->
+        <div id="initial-state" class="empty-state">
+          <p>Select a cleaning mode to start optimizing your LinkedIn profile.</p>
+        </div>
 
-  <section id="sent" class="mode-section hidden">
-    <h2>Sent Invitations</h2>
-    <label for="sentDelay">Delay between actions</label>
-    <div class="range-wrap">
-      <input type="range" id="sentDelay" min="1" max="10" value="2">
-      <span id="sentDelayValue">2 sec</span>
-    </div>
-    <div class="controls">
-      <button id="sentStart" class="success start icon">Start</button>
-      <button id="sentPause" class="warning pause icon">Pause</button>
-      <button id="sentStop" class="danger stop icon">Stop</button>
-    </div>
-    <progress id="sentProgress" value="0" max="0"></progress>
-    <div class="status">
-      <span id="sentCounter">0/0</span> - <span id="sentState">Idle</span>
-    </div>
-  </section>
+        <!-- Connections Section -->
+        <section id="connections" class="mode-section hidden">
+          <div class="section-header">
+            <h2>Connections</h2>
+            <span class="badge">Bulk Action</span>
+          </div>
+          
+          <div class="setting-group">
+            <label for="delay">Speed (Delay)</label>
+            <div class="range-container">
+              <input type="range" id="delay" min="1" max="60" value="2" class="slider">
+              <span id="delayValue" class="value-tag">2s</span>
+            </div>
+            <p class="help-text">Time between each removal.</p>
+          </div>
 
-  <section id="received" class="mode-section hidden">
-    <h2>Received Invitations</h2>
-    <label for="recvDelay">Delay between actions</label>
-    <div class="range-wrap">
-      <input type="range" id="recvDelay" min="1" max="10" value="2">
-      <span id="recvDelayValue">2 sec</span>
-    </div>
-    <div class="controls">
-      <button id="recvAccept" class="success accept icon">Accept</button>
-      <button id="recvIgnore" class="danger ignore icon">Ignore</button>
-      <button id="recvPause" class="warning pause icon">Pause</button>
-      <button id="recvStop" class="danger stop icon">Stop</button>
-    </div>
-    <progress id="recvProgress" value="0" max="0"></progress>
-    <div class="status">
-      <span id="recvAccepted">0</span> accepted / <span id="recvIgnored">0</span> ignored - <span id="recvTotal">0</span> total - <span id="recvState">Idle</span>
-    </div>
-  </section>
+          <div class="status-card">
+            <div class="status-row">
+              <span class="label">Status</span>
+              <span id="state" class="value status-idle">Idle</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Removed</span>
+              <span id="counter" class="value">0/0</span>
+            </div>
+            <progress id="progress" value="0" max="0"></progress>
+          </div>
 
-  <button id="resetState" class="danger">Reset State</button>
+          <div class="actions">
+            <button id="start" class="btn btn-primary">Start</button>
+            <button id="pause" class="btn btn-secondary">Pause</button>
+            <button id="stop" class="btn btn-danger">Stop</button>
+          </div>
+        </section>
 
+        <!-- Posts Section -->
+        <section id="posts" class="mode-section hidden">
+           <div class="section-header">
+            <h2>My Posts</h2>
+            <span class="badge">Bulk Action</span>
+          </div>
+          
+          <div class="setting-group">
+            <label for="postDelay">Speed (Delay)</label>
+            <div class="range-container">
+              <input type="range" id="postDelay" min="1" max="60" value="3" class="slider">
+              <span id="postDelayValue" class="value-tag">3s</span>
+            </div>
+          </div>
+
+          <div class="status-card">
+            <div class="status-row">
+              <span class="label">Status</span>
+              <span id="postState" class="value status-idle">Idle</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Deleted</span>
+              <span id="postCounter" class="value">0/0</span>
+            </div>
+            <progress id="postProgress" value="0" max="0"></progress>
+          </div>
+
+          <div class="actions">
+            <button id="postStart" class="btn btn-primary">Start</button>
+            <button id="postPause" class="btn btn-secondary">Pause</button>
+            <button id="postStop" class="btn btn-danger">Stop</button>
+          </div>
+        </section>
+
+        <!-- Messages Section -->
+        <section id="messages" class="mode-section hidden">
+          <div class="section-header">
+            <h2>Conversations</h2>
+            <span class="badge">Bulk Action</span>
+          </div>
+
+          <div class="setting-group">
+            <label for="msgDelay">Speed (Delay)</label>
+            <div class="range-container">
+              <input type="range" id="msgDelay" min="1" max="10" value="2" class="slider">
+              <span id="msgDelayValue" class="value-tag">2s</span>
+            </div>
+          </div>
+
+          <div class="status-card">
+            <div class="status-row">
+              <span class="label">Status</span>
+              <span id="msgState" class="value status-idle">Idle</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Deleted</span>
+              <span id="msgCounter" class="value">0/0</span>
+            </div>
+            <progress id="msgProgress" value="0" max="0"></progress>
+          </div>
+
+          <div class="actions">
+            <button id="msgStart" class="btn btn-primary">Start</button>
+            <button id="msgPause" class="btn btn-secondary">Pause</button>
+            <button id="msgStop" class="btn btn-danger">Stop</button>
+          </div>
+        </section>
+
+        <!-- Sent Section -->
+        <section id="sent" class="mode-section hidden">
+          <div class="section-header">
+            <h2>Sent Invites</h2>
+            <span class="badge">Bulk Action</span>
+          </div>
+
+          <div class="setting-group">
+            <label for="sentDelay">Speed (Delay)</label>
+            <div class="range-container">
+              <input type="range" id="sentDelay" min="1" max="10" value="2" class="slider">
+              <span id="sentDelayValue" class="value-tag">2s</span>
+            </div>
+          </div>
+
+          <div class="status-card">
+            <div class="status-row">
+              <span class="label">Status</span>
+              <span id="sentState" class="value status-idle">Idle</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Withdrawn</span>
+              <span id="sentCounter" class="value">0/0</span>
+            </div>
+            <progress id="sentProgress" value="0" max="0"></progress>
+          </div>
+
+          <div class="actions">
+            <button id="sentStart" class="btn btn-primary">Start</button>
+            <button id="sentPause" class="btn btn-secondary">Pause</button>
+            <button id="sentStop" class="btn btn-danger">Stop</button>
+          </div>
+        </section>
+
+        <!-- Received Section -->
+        <section id="received" class="mode-section hidden">
+          <div class="section-header">
+            <h2>Received Invites</h2>
+             <span class="badge">Bulk Action</span>
+          </div>
+
+          <div class="setting-group">
+            <label for="recvDelay">Speed (Delay)</label>
+            <div class="range-container">
+              <input type="range" id="recvDelay" min="1" max="10" value="2" class="slider">
+              <span id="recvDelayValue" class="value-tag">2s</span>
+            </div>
+          </div>
+
+          <div class="status-card">
+             <div class="status-row">
+              <span class="label">Status</span>
+              <span id="recvState" class="value status-idle">Idle</span>
+            </div>
+            <div class="status-row">
+              <span class="label">Processed</span>
+              <span class="value"><span id="recvAccepted">0</span> acc / <span id="recvIgnored">0</span> ign</span>
+            </div>
+             <div class="status-row-small">
+              <span class="label-small">Total found: <span id="recvTotal">0</span></span>
+            </div>
+            <progress id="recvProgress" value="0" max="0"></progress>
+          </div>
+
+          <div class="actions grid-2">
+            <button id="recvAccept" class="btn btn-success">Accept All</button>
+            <button id="recvIgnore" class="btn btn-danger-outline">Ignore All</button>
+            <button id="recvPause" class="btn btn-secondary full-width">Pause</button>
+            <button id="recvStop" class="btn btn-danger full-width">Stop</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <button id="resetState" class="link-btn">Reset All States</button>
+    </footer>
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>
